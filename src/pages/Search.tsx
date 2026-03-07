@@ -302,7 +302,7 @@ export default function Search() {
                   </div>
                 )}
                 <div className="d-flex flex-column justify-content-end pb-1 min-w-0">
-                  <h1 className="fs-4 fw-bold font-mono text-body tracking-tight mb-1 text-truncate">
+                  <h1 className="fs-4 fw-bold font-mono text-body tracking-tight mb-1">
                     {selectedItem.title || selectedItem.name}
                   </h1>
                   <div className="d-flex align-items-center gap-2 flex-wrap font-mono text-secondary" style={{ fontSize: '12px' }}>
