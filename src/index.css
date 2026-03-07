@@ -111,6 +111,16 @@ h6,
   border-color: #085072;
 }
 
+.btn-light:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: var(--base-text) !important;
+}
+
+[data-bs-theme="dark"] .btn-light:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--base-text) !important;
+}
+
 [data-bs-theme="dark"] .btn-primary:hover {
   background-color: #276288;
   border-color: #276288;
@@ -253,8 +263,13 @@ h6,
 }
 
 @keyframes continuousScroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 .title-scroll-wrapper {

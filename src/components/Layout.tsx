@@ -5,20 +5,19 @@ import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3 } from 'luc
 
 export default function Layout() {
 	const [show, setShow] = useState(false);
-	const [theme, setTheme] = useState('light');
+	const [theme, setTheme] = useState(() => localStorage.getItem('screen-arxiv-theme') || 'light');
 	const location = useLocation();
 
 	useEffect(() => {
-		setTheme(document.documentElement.getAttribute('data-bs-theme') || 'light');
-	}, []);
+		document.documentElement.setAttribute('data-bs-theme', theme);
+		localStorage.setItem('screen-arxiv-theme', theme);
+	}, [theme]);
 
 	const handleClose = () => setShow(false);
 	const handleShow = () => setShow(true);
 
 	const toggleTheme = () => {
-		const newTheme = theme === 'dark' ? 'light' : 'dark';
-		document.documentElement.setAttribute('data-bs-theme', newTheme);
-		setTheme(newTheme);
+		setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 	};
 
 	return (
