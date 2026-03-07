@@ -184,21 +184,42 @@ export default function MediaCard({
                         style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em' }}
                     />
 
-                    {/* Second line: date left, status pill right */}
-                    <div className="d-flex align-items-center justify-content-between gap-2 w-100">
-                        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ minWidth: 0 }}>
-                            {type === 'tv' && item.season && (
-                                <p className="text-secondary mb-0 font-mono" style={{ fontSize: '11px' }}>{item.season}</p>
+                    {/* Metadata block with separate lines for each tag */}
+                    <div className="d-flex justify-content-between align-items-start gap-2 w-100">
+                        <div className="d-flex flex-column min-w-0" style={{ gap: '0' }}>
+                            {type === 'tv' && (item.number_of_seasons || (item.seasons && item.seasons.length > 0) || item.season) && (
+                                <p className="text-secondary mb-0 font-mono" style={{ fontSize: '11px' }}>
+                                    {item.number_of_seasons
+                                        ? `${item.number_of_seasons} Season${item.number_of_seasons !== 1 ? 's' : ''}`
+                                        : item.seasons?.length
+                                            ? `${item.seasons.length} Season${item.seasons.length !== 1 ? 's' : ''}`
+                                            : item.season}
+                                </p>
                             )}
-                            {type === 'tv' && item.season && <span className="text-secondary opacity-50" style={{ fontSize: '10px' }}>•</span>}
                             <p className="text-secondary mb-0 font-mono" style={{ fontSize: '11px' }}>
                                 {item.date || item.year || (item.release_date ? item.release_date.split('-')[0] : item.first_air_date ? item.first_air_date.split('-')[0] : 'N/A')}
                             </p>
+                            {item.runtime > 0 && !isSearch && (
+                                <p className="text-secondary mb-0 font-mono" style={{ fontSize: '11px' }}>{formatRuntime(item.runtime)}</p>
+                            )}
+                            {item.media_type && isSearch && (
+                                <Badge bg="secondary" className="bg-opacity-10 text-secondary border-0 font-mono px-2 align-self-start" style={{ fontSize: '9px', marginTop: '2px' }}>
+                                    {item.media_type.toUpperCase()}
+                                </Badge>
+                            )}
+                            {type === 'tv' && item.progress && !isSearch && (
+                                <div className="d-flex align-items-center gap-1 font-mono" style={{ fontSize: '10px', marginTop: '1px' }}>
+                                    <span className="text-secondary">Ep:</span>
+                                    <span className="text-success fw-bold">{item.progress.watched}</span>
+                                    <span className="text-secondary opacity-50">/</span>
+                                    <span className="text-secondary">{item.progress.total}</span>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Right: status — only when not in selection mode */}
+                        {/* Status pill on the right */}
                         {!selectionMode && (
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 pt-1">
                                 {isSearch ? (
                                     <div className="d-flex align-items-center gap-2">
                                         {onClick && (
@@ -256,32 +277,6 @@ export default function MediaCard({
                                     </span>
                                 ) : null}
                             </div>
-                        )}
-                    </div>
-
-                    {/* Third line: runtime, media type, progress */}
-                    <div className="d-flex align-items-center gap-2 flex-wrap">
-                        {item.runtime > 0 && !isSearch && (
-                            <p className="text-secondary mb-0 font-mono" style={{ fontSize: '11px' }}>{formatRuntime(item.runtime)}</p>
-                        )}
-                        {item.media_type && isSearch && (
-                            <>
-                                {item.runtime > 0 && !isSearch && <span className="text-secondary opacity-50" style={{ fontSize: '10px' }}>•</span>}
-                                <Badge bg="secondary" className="bg-opacity-10 text-secondary border-0 font-mono px-2" style={{ fontSize: '9px' }}>
-                                    {item.media_type.toUpperCase()}
-                                </Badge>
-                            </>
-                        )}
-                        {type === 'tv' && item.progress && !isSearch && (
-                            <>
-                                {(item.runtime > 0 || (item.media_type && isSearch)) && <span className="text-secondary opacity-50" style={{ fontSize: '10px' }}>•</span>}
-                                <div className="d-flex align-items-center gap-1 font-mono" style={{ fontSize: '10px' }}>
-                                    <span className="text-secondary">Ep:</span>
-                                    <span className="text-success fw-bold">{item.progress.watched}</span>
-                                    <span className="text-secondary opacity-50">/</span>
-                                    <span className="text-secondary">{item.progress.total}</span>
-                                </div>
-                            </>
                         )}
                     </div>
                 </div>
