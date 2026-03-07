@@ -14,7 +14,7 @@ const fetchFromTMDB = async (endpoint: string) => {
       accept: 'application/json'
     }
   };
-  
+
   const response = await fetch(url, options);
   return response;
 };
@@ -85,19 +85,19 @@ const MOCK_SEARCH_RESULTS = [
 export const searchMulti = async (query: string) => {
   if (!API_KEY || API_KEY === 'YOUR_TMDB_API_KEY') {
     console.warn('TMDB API Key is missing. Returning mock data.');
-    return MOCK_SEARCH_RESULTS.filter(item => 
-      (item.title?.toLowerCase().includes(query.toLowerCase()) || 
-       item.name?.toLowerCase().includes(query.toLowerCase()))
+    return MOCK_SEARCH_RESULTS.filter(item =>
+    (item.title?.toLowerCase().includes(query.toLowerCase()) ||
+      item.name?.toLowerCase().includes(query.toLowerCase()))
     );
   }
   try {
     const response = await fetchFromTMDB(`/search/multi?query=${encodeURIComponent(query)}`);
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.status_message || 'Failed to fetch from TMDB');
     }
-    
+
     return data.results.filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv');
   } catch (error: any) {
     console.error('Error searching:', error);
@@ -174,4 +174,40 @@ export const fetchTVSeason = async (id: number, seasonNumber: number) => {
 export const getImageUrl = (path: string, size: string = 'w500') => {
   if (!path) return '';
   return `https://image.tmdb.org/t/p/${size}${path}`;
+};
+
+let genreMapCache: Map<number, string> | null = null;
+
+export const fetchGenreMap = async (): Promise<Map<number, string>> => {
+  if (genreMapCache) return genreMapCache;
+
+  const map = new Map<number, string>();
+
+  if (!API_KEY || API_KEY === 'YOUR_TMDB_API_KEY') {
+    // Fallback genres for demo mode
+    [[28, 'Action'], [12, 'Adventure'], [16, 'Animation'], [35, 'Comedy'], [80, 'Crime'],
+    [99, 'Documentary'], [18, 'Drama'], [10751, 'Family'], [14, 'Fantasy'], [36, 'History'],
+    [27, 'Horror'], [10402, 'Music'], [9648, 'Mystery'], [10749, 'Romance'], [878, 'Sci-Fi'],
+    [53, 'Thriller'], [10752, 'War'], [37, 'Western'], [10759, 'Action & Adventure'],
+    [10765, 'Sci-Fi & Fantasy']].forEach(([id, name]) => map.set(id as number, name as string));
+    genreMapCache = map;
+    return map;
+  }
+
+  try {
+    const [movieRes, tvRes] = await Promise.all([
+      fetchFromTMDB('/genre/movie/list'),
+      fetchFromTMDB('/genre/tv/list'),
+    ]);
+    const movieData = await movieRes.json();
+    const tvData = await tvRes.json();
+    for (const g of [...(movieData.genres || []), ...(tvData.genres || [])]) {
+      map.set(g.id, g.name);
+    }
+  } catch (e) {
+    console.error('Error fetching genre map:', e);
+  }
+
+  genreMapCache = map;
+  return map;
 };

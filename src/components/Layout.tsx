@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar, Container, Offcanvas, Nav, Button } from 'react-bootstrap';
-import { Menu, Search, X, Film, Tv, Palette, Clapperboard } from 'lucide-react';
+import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3 } from 'lucide-react';
 
 export default function Layout() {
 	const [show, setShow] = useState(false);
@@ -53,6 +53,10 @@ export default function Layout() {
 				</Offcanvas.Header>
 				<Offcanvas.Body className="d-flex flex-column px-3 pt-4 font-mono">
 					<Nav className="flex-column gap-1">
+						<Nav.Link as={Link} to="/" onClick={handleClose} className={`d-flex align-items-center gap-3 rounded px-3 py-2 ${location.pathname === '/' ? 'bg-primary bg-opacity-10 text-primary fw-medium' : 'text-body hover-bg-light'}`} style={{ fontSize: '14px' }}>
+							<BarChart3 size={16} />
+							<span>Analytics</span>
+						</Nav.Link>
 						<Nav.Link as={Link} to="/movies" onClick={handleClose} className={`d-flex align-items-center gap-3 rounded px-3 py-2 ${location.pathname === '/movies' ? 'bg-primary bg-opacity-10 text-primary fw-medium' : 'text-body hover-bg-light'}`} style={{ fontSize: '14px' }}>
 							<Film size={16} />
 							<span>Movies</span>

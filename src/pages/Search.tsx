@@ -124,13 +124,39 @@ export default function Search() {
       image: item.image || (item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null),
       summary: item.summary || item.overview,
       media_type: item.media_type,
+      genre_ids: item.genre_ids || [],
       ...(isMovie ? {} : { progress: { watched: 0, total: 10 }, season: 'Season 1', episodes: [] })
     };
 
     if (isMovie) {
       addMovie(newItem);
+      // Background fetch to get runtime for analytics
+      fetchMovieDetails(item.id).then(details => {
+        if (details) {
+          updateMovie(item.id, {
+            runtime: details.runtime || 0,
+            cast: details.credits?.cast?.slice(0, 5) || [],
+            trailer: details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
+          });
+        }
+      });
     } else {
       addShow(newItem);
+      // Background fetch to get runtime/seasons for analytics
+      fetchTVDetails(item.id).then(details => {
+        if (details) {
+          const episodeRuntime = details.episode_run_time?.[0] || details.last_episode_to_air?.runtime || 0;
+          const totalEpisodes = details.number_of_episodes || 0;
+          const seasons = details.seasons?.filter((s: any) => s.season_number > 0) || [];
+          updateShow(item.id, {
+            runtime: episodeRuntime * totalEpisodes,
+            episode_runtime: episodeRuntime,
+            total_episodes: totalEpisodes,
+            seasons,
+            trailer: details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
+          });
+        }
+      });
     }
 
     toast.success(`${newItem.title} marked as ${status}`, {

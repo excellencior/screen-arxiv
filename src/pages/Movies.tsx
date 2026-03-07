@@ -161,53 +161,49 @@ export default function Movies() {
                 </div>
               </div>
 
-              <div className="mb-4">
-                <h3 className="text-secondary text-uppercase fw-bold mb-2 font-mono" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Summary</h3>
-                <p className="font-mono text-body" style={{ fontSize: '13px', lineHeight: '1.6' }}>
-                  {selectedMovie.summary || 'No summary available.'}
-                </p>
+              <div className="px-4 py-3 border-bottom border-secondary border-opacity-10 bg-body d-flex gap-2 flex-wrap align-items-center justify-content-start">
+                {selectedMovie.trailer && (
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10"
+                    onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedMovie.trailer}`, '_blank')}
+                  >
+                    <Play size={14} fill="currentColor" />
+                    <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
+                  </Button>
+                )}
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
+                  onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}
+                >
+                  <Trash2 size={14} />
+                  <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
+                </Button>
               </div>
 
-              <div className="mb-4">
-                <h3 className="text-secondary text-uppercase fw-bold mb-3 font-mono" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Cast & Crew</h3>
-                <div className="d-flex flex-column gap-2">
-                  {(selectedMovie.cast || []).map((person: any, idx: number) => (
-                    <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom border-secondary border-opacity-10 pb-2">
-                      <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name}</span>
-                      <span className="text-secondary font-mono" style={{ fontSize: '11px', fontStyle: person.role === 'Director' ? 'italic' : 'normal' }}>{person.role}</span>
-                    </div>
-                  ))}
+              <div className="p-4 bg-body">
+                <div className="mb-4">
+                  <h3 className="text-secondary text-uppercase fw-bold mb-2 font-mono" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Summary</h3>
+                  <p className="font-mono text-body" style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                    {selectedMovie.summary || 'No summary available.'}
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <h3 className="text-secondary text-uppercase fw-bold mb-3 font-mono" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Cast & Crew</h3>
+                  <div className="d-flex flex-column gap-2">
+                    {(selectedMovie.cast || []).map((person: any, idx: number) => (
+                      <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom border-secondary border-opacity-10 pb-2">
+                        <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name}</span>
+                        <span className="text-secondary font-mono" style={{ fontSize: '11px', fontStyle: person.role === 'Director' ? 'italic' : 'normal' }}>{person.role}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              {selectedMovie.trailer ? (
-                <Button
-                  variant="primary"
-                  className="w-100 py-2 d-flex align-items-center justify-content-center gap-2 font-mono fw-medium rounded border-0"
-                  onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedMovie.trailer}`, '_blank')}
-                  style={{ fontSize: '14px' }}
-                >
-                  <Play size={16} fill="currentColor" /> Watch Trailer
-                </Button>
-              ) : (
-                <Button
-                  variant="light"
-                  className="w-100 py-2 d-flex align-items-center justify-content-center gap-2 font-mono fw-medium rounded border text-secondary"
-                  disabled
-                  style={{ fontSize: '14px' }}
-                >
-                  No Trailer Available
-                </Button>
-              )}
-
-              <Button
-                variant="outline-danger"
-                className="w-100 py-2 mt-3 d-flex align-items-center justify-content-center gap-2 font-mono fw-medium rounded"
-                onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}
-                style={{ fontSize: '13px' }}
-              >
-                <Trash2 size={14} /> Remove from Library
-              </Button>
             </Modal.Body>
           </>
         )}
@@ -252,6 +248,6 @@ export default function Movies() {
           </Modal.Body>
         )}
       </Modal>
-    </Container>
+    </Container >
   );
 }

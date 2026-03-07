@@ -6,10 +6,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
 import Movies from './pages/Movies';
 import TV from './pages/TV';
 import Search from './pages/Search';
+import Analytics from './pages/Analytics';
 import { LibraryProvider } from './context/LibraryContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -26,7 +26,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
+            <Route index element={<Analytics />} />
             <Route path="movies" element={<Movies />} />
             <Route path="tv" element={<TV />} />
             <Route path="search" element={<Search />} />
