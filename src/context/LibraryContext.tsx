@@ -40,13 +40,13 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addMovie = (movie: any) => {
     if (!movies.find(m => m.id === movie.id)) {
-      setMovies(prev => [...prev, movie]);
+      setMovies(prev => [...prev, { ...movie, addedAt: movie.addedAt || new Date().toISOString() }]);
     }
   };
 
   const addShow = (show: any) => {
     if (!shows.find(s => s.id === show.id)) {
-      setShows(prev => [...prev, show]);
+      setShows(prev => [...prev, { ...show, addedAt: show.addedAt || new Date().toISOString() }]);
     }
   };
 

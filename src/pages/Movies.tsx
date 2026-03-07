@@ -1,107 +1,53 @@
-import React, { useState } from 'react';
-import { Container, Dropdown, Button, Modal, Badge } from 'react-bootstrap';
-import { ChevronDown, Play, X, Plus } from 'lucide-react';
-import { fetchMovieDetails, getImageUrl } from '../services/tmdb';
+import React, { useState, useMemo } from 'react';
+import { Container, Button, Modal } from 'react-bootstrap';
+import { Play, X, Plus, Trash2, CheckSquare } from 'lucide-react';
+import { fetchMovieDetails } from '../services/tmdb';
 import { useLibrary } from '../context/LibraryContext';
 import { Link } from 'react-router-dom';
+import MediaCard from '../components/MediaCard';
 
-const STATUS_OPTIONS = [
-  { label: 'WATCHED', color: 'success' },
-  { label: 'WATCHING', color: 'primary' },
-  { label: 'WILL WATCH', color: 'warning' },
-  { label: 'ON HOLD', color: 'danger' },
-  { label: 'DONE', color: 'secondary' }
-];
+const STATUS_COLORS: Record<string, string> = {
+  WATCHED: 'success', WATCHING: 'primary', 'WILL WATCH': 'warning', 'ON HOLD': 'danger',
+};
 
-const MOCK_MOVIE_DATA = [
-  {
-    id: 1,
-    title: 'Dune: Part Three',
-    date: 'Dec 18, 2026',
-    status: 'WATCHED',
-    statusColor: 'success',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBO0xD1Tkc0awIV1iNTg4Kds9v5p-GWWuTRjmlnjSIQkGtOQxTtxdi2HRTMI4RHjtX5C5oBPHt6cUrKWhdsWrEgwL138tXonKM2x31c3QuxSIPGIbQffU_iGs9lpq0Pr4zlfYcLETVdhYNf64i0pvholdluhREL8KzbJUkfxx1lfPjXF8SckGXtSxbwl0ygS-It5dg22tfrfqGcBmKuGPbZI9tFWe4pooMWxOieykvZxPoRwCDTzvDcuQTNSH6qufYt3y5VlhywZu4',
-    year: 2026,
-    summary: 'Paul Atreides unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family. Facing a choice between the love of his life and the fate of the known universe, he endeavors to prevent a terrible future only he can foresee.',
-    cast: [
-      { name: 'Timothée Chalamet', role: 'Paul Atreides' },
-      { name: 'Zendaya', role: 'Chani' },
-      { name: 'Rebecca Ferguson', role: 'Lady Jessica' },
-      { name: 'Oscar Isaac', role: 'Duke Leto' },
-      { name: 'Denis Villeneuve', role: 'Director' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'The Batman II',
-    date: 'Oct 02, 2026',
-    status: 'WATCHING',
-    statusColor: 'primary',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRQEWyN98Kf-5V6Zqz9Yxx5S1yJz2JfL_L9db3fxIvaKNYHOG1UZDhh18FSXouNJeyLEKJ4VxVgdJz22sTv3-7euU337992DcQiKSKv5HToT5pv02Gr079eyeN3oO8CGebVTuouTt6lH9h2DwDNXf3WKFTW5fRzbREKVLbDbvWl0_6cKmwdNpEw8YKSFhXm4iOIlU7o1plyXtONpdroNY8KLBUPXBsSKRC92iQAkQ-yjn4uVj3XBMAcmu3g8tHYsqAQX5BewXRjdI',
-    year: 2026
-  },
-  {
-    id: 3,
-    title: 'Spider-Verse 3',
-    date: 'Mar 27, 2026',
-    status: 'WILL WATCH',
-    statusColor: 'warning',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBO0xD1Tkc0awIV1iNTg4Kds9v5p-GWWuTRjmlnjSIQkGtOQxTtxdi2HRTMI4RHjtX5C5oBPHt6cUrKWhdsWrEgwL138tXonKM2x31c3QuxSIPGIbQffU_iGs9lpq0Pr4zlfYcLETVdhYNf64i0pvholdluhREL8KzbJUkfxx1lfPjXF8SckGXtSxbwl0ygS-It5dg22tfrfqGcBmKuGPbZI9tFWe4pooMWxOieykvZxPoRwCDTzvDcuQTNSH6qufYt3y5VlhywZu4',
-    year: 2026
-  },
-  {
-    id: 4,
-    title: 'Superman',
-    date: 'Jul 11, 2025',
-    status: 'WATCHED',
-    statusColor: 'success',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRQEWyN98Kf-5V6Zqz9Yxx5S1yJz2JfL_L9db3fxIvaKNYHOG1UZDhh18FSXouNJeyLEKJ4VxVgdJz22sTv3-7euU337992DcQiKSKv5HToT5pv02Gr079eyeN3oO8CGebVTuouTt6lH9h2DwDNXf3WKFTW5fRzbREKVLbDbvWl0_6cKmwdNpEw8YKSFhXm4iOIlU7o1plyXtONpdroNY8KLBUPXBsSKRC92iQAkQ-yjn4uVj3XBMAcmu3g8tHYsqAQX5BewXRjdI',
-    year: 2025
-  },
-  {
-    id: 5,
-    title: 'GTA: The Movie',
-    date: 'Nov 20, 2025',
-    status: 'WILL WATCH',
-    statusColor: 'warning',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBO0xD1Tkc0awIV1iNTg4Kds9v5p-GWWuTRjmlnjSIQkGtOQxTtxdi2HRTMI4RHjtX5C5oBPHt6cUrKWhdsWrEgwL138tXonKM2x31c3QuxSIPGIbQffU_iGs9lpq0Pr4zlfYcLETVdhYNf64i0pvholdluhREL8KzbJUkfxx1lfPjXF8SckGXtSxbwl0ygS-It5dg22tfrfqGcBmKuGPbZI9tFWe4pooMWxOieykvZxPoRwCDTzvDcuQTNSH6qufYt3y5VlhywZu4',
-    year: 2025
-  }
-];
+type SortKey = 'year-desc' | 'year-asc' | 'title-asc' | 'title-desc' | 'added-desc' | 'added-asc';
 
 export default function Movies() {
-  const { movies, updateMovie } = useLibrary();
-  const [selectedMovie, setSelectedMovie] = useState<any>(null);
+  const { movies, updateMovie, removeMovie } = useLibrary();
 
-  const formatRuntime = (minutes: number) => {
-    if (!minutes) return null;
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${h > 0 ? h + 'h ' : ''}${m}m`;
-  };
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedMovie, setSelectedMovie] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+  const displayedMovies = useMemo(() => {
+    let list = [...movies];
+    list.sort((a, b) => (b.year || 0) - (a.year || 0));
+    return list;
+  }, [movies]);
+
+  const groupedByYear = useMemo(() => {
+    const map: Record<number, any[]> = {};
+    displayedMovies.forEach(m => {
+      if (!map[m.year]) map[m.year] = [];
+      map[m.year].push(m);
+    });
+    const years = Object.keys(map).map(Number).sort((a, b) => b - a);
+    return { map, years };
+  }, [displayedMovies]);
 
   const handleMovieClick = async (movie: any) => {
+    if (selectionMode) return;
     setSelectedMovie(movie);
     if (movie.cast && movie.cast.length > 0 && movie.runtime !== undefined) return;
-
     const details = await fetchMovieDetails(movie.id);
     if (details) {
-      const cast = details.credits?.cast?.slice(0, 5).map((c: any) => ({
-        name: c.name,
-        role: c.character
-      })) || [];
-      
+      const cast = details.credits?.cast?.slice(0, 5).map((c: any) => ({ name: c.name, role: c.character })) || [];
       const trailer = details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null;
-
-      const updatedMovie = { 
-        ...movie, 
-        summary: details.overview || movie.summary, 
-        cast,
-        runtime: details.runtime || 0,
-        trailer
-      };
-      setSelectedMovie(updatedMovie);
-      updateMovie(movie.id, updatedMovie);
+      const updated = { ...movie, summary: details.overview || movie.summary, cast, runtime: details.runtime || 0, trailer };
+      setSelectedMovie(updated);
+      updateMovie(movie.id, updated);
     }
   };
 
@@ -109,163 +55,246 @@ export default function Movies() {
     updateMovie(movieId, { status: newStatus, statusColor: newColor });
   };
 
-  const groupedMovies = movies.reduce((acc, movie) => {
-    if (!acc[movie.year]) acc[movie.year] = [];
-    acc[movie.year].push(movie);
-    return acc;
-  }, {} as Record<number, any[]>);
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  };
+  const exitSelectionMode = () => { setSelectionMode(false); setSelectedIds(new Set()); };
+  const handleBulkDelete = () => { selectedIds.forEach(id => removeMovie(id)); exitSelectionMode(); setBulkDeleteOpen(false); };
 
-  const years = Object.keys(groupedMovies).map(Number).sort((a, b) => b - a);
-
+  const renderCards = (list: any[]) =>
+    list.map(movie => (
+      <MediaCard
+        key={movie.id}
+        item={movie}
+        type="movie"
+        onClick={() => handleMovieClick(movie)}
+        onStatusChange={handleStatusChange}
+        onDelete={() => setDeleteTarget(movie)}
+        selectionMode={selectionMode}
+        isSelected={selectedIds.has(movie.id)}
+        onSelect={toggleSelect}
+      />
+    ));
 
   return (
-    <Container className="py-4 px-3" style={{ maxWidth: '672px' }}>
+    <Container className="py-3 px-4" style={{ maxWidth: '672px' }}>
+
+      <div className="mb-3 d-flex align-items-center justify-content-between">
+        <div>
+          <h1 className="fs-3 fw-medium font-mono text-body tracking-tight mb-2">Movies</h1>
+          <p className="text-secondary font-mono m-0" style={{ fontSize: '13px' }}>
+            {displayedMovies.length !== movies.length
+              ? `${displayedMovies.length} of ${movies.length} entries`
+              : `${movies.length} entries`}
+          </p>
+        </div>
+        <div className="d-flex align-items-center gap-2">
+          {!selectionMode ? (
+            <>
+              <button onClick={() => setSelectionMode(true)}
+                className="border-0 bg-secondary bg-opacity-10 text-body p-2 rounded d-flex align-items-center"
+                title="Select items" style={{ cursor: 'pointer' }}>
+                <CheckSquare size={16} />
+              </button>
+              <Button as={Link} to="/search" variant="outline-secondary" className="d-flex align-items-center gap-2 border-0 bg-secondary bg-opacity-10 text-body p-2 rounded">
+                <Plus size={16} />
+              </Button>
+            </>
+          ) : (
+            <>
+              <span className="font-mono text-secondary me-1" style={{ fontSize: '12px' }}>{selectedIds.size} selected</span>
+              {selectedIds.size > 0 && (
+                <button onClick={() => setBulkDeleteOpen(true)}
+                  className="border-0 bg-danger bg-opacity-10 text-danger p-2 rounded d-flex align-items-center gap-1 font-mono"
+                  style={{ cursor: 'pointer', fontSize: '12px' }}>
+                  <Trash2 size={14} /> Delete
+                </button>
+              )}
+              <button onClick={exitSelectionMode}
+                className="border-0 bg-secondary bg-opacity-10 text-body p-2 rounded d-flex align-items-center"
+                style={{ cursor: 'pointer' }}>
+                <X size={16} />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
       {movies.length === 0 ? (
         <div className="text-center py-5">
-          <h2 className="fs-4 fw-bold mb-3 font-mono">Your Library is Empty</h2>
-          <p className="text-secondary font-mono mb-4">Search for movies to add them to your archive.</p>
-          <Button as={Link} to="/search" variant="primary" className="d-inline-flex align-items-center gap-2 font-mono rounded-pill px-4">
-            <Plus size={18} /> Search Movies
+          <p className="text-secondary font-mono mb-4">Your movie archive is empty.</p>
+          <Button as={Link} to="/search" variant="primary" className="d-inline-flex align-items-center gap-2 font-mono rounded px-4">
+            <Plus size={16} /> Add Movies
           </Button>
         </div>
       ) : (
         <>
-          <div className="d-flex gap-2 mb-4 overflow-auto hide-scrollbar" style={{ whiteSpace: 'nowrap' }}>
-        <Dropdown>
-          <Dropdown.Toggle variant="outline-secondary" className="bg-body rounded-pill px-3 py-1 font-mono" style={{ fontSize: '14px' }}>
-            Status
-          </Dropdown.Toggle>
-        </Dropdown>
-        <Dropdown>
-          <Dropdown.Toggle variant="outline-secondary" className="bg-body rounded-pill px-3 py-1 font-mono" style={{ fontSize: '14px' }}>
-            Genre
-          </Dropdown.Toggle>
-        </Dropdown>
-        <Dropdown>
-          <Dropdown.Toggle variant="outline-secondary" className="bg-body rounded-pill px-3 py-1 font-mono" style={{ fontSize: '14px' }}>
-            Sort
-          </Dropdown.Toggle>
-        </Dropdown>
-      </div>
+          {displayedMovies.length === 0 ? (
+            <div className="text-center py-5">
+              <p className="text-secondary font-mono" style={{ fontSize: '13px' }}>No movies available.</p>
+            </div>
+          ) : (
+            groupedByYear.years.map(year => (
+              <div key={year} className="mb-5">
+                <h2 className="fs-5 fw-medium mb-3 font-mono text-body d-flex align-items-center gap-3">
+                  {year}
+                  <div className="flex-grow-1 bg-secondary opacity-25" style={{ height: '1px' }} />
+                </h2>
+                <div className="d-flex flex-column gap-2">{renderCards(groupedByYear.map[year])}</div>
+              </div>
+            ))
+          )}
+        </>
+      )}
 
-      {years.map(year => (
-        <div key={year} className="mb-5">
-          <h2 className="fs-4 fw-bold mb-3 font-mono">{year}</h2>
-          <div className="d-flex flex-column gap-3">
-            {groupedMovies[year].map(movie => (
-              <div 
-                key={movie.id} 
-                className="card border-0 shadow-sm p-3 d-flex flex-row align-items-center gap-3 cursor-pointer"
-              >
-                <div 
-                  className="flex-shrink-0 rounded overflow-hidden bg-secondary" 
-                  style={{ width: '48px', height: '72px', cursor: 'pointer' }}
-                  onClick={() => handleMovieClick(movie)}
-                >
-                  <img src={movie.image} alt={movie.title} className="w-100 h-100 object-fit-cover" />
-                </div>
-                <div 
-                  className="flex-grow-1 min-w-0"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => handleMovieClick(movie)}
-                >
-                  <h3 className="fs-6 fw-bold text-truncate mb-1 font-mono">{movie.title}</h3>
-                  <div className="d-flex align-items-center gap-2">
-                    <p className="text-secondary mb-0 font-mono" style={{ fontSize: '12px' }}>{movie.date}</p>
-                    {movie.runtime > 0 && (
+      {/* ── Detail Modal ── */}
+      <Modal show={!!selectedMovie} onHide={() => setSelectedMovie(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
+        {selectedMovie && (
+          <Modal.Body className="p-0">
+
+            {/* ── Header ── */}
+            <div className="p-4 pb-3">
+
+              {/* Top row: poster + meta + close */}
+              <div className="d-flex gap-3 align-items-start">
+                {selectedMovie.image && (
+                  <div className="flex-shrink-0 shadow-sm rounded overflow-hidden" style={{ width: '72px', height: '108px' }}>
+                    <img src={selectedMovie.image} alt={selectedMovie.title} className="w-100 h-100 object-fit-cover" />
+                  </div>
+                )}
+
+                <div className="flex-grow-1 min-w-0 pt-1">
+                  <h1 className="fs-5 fw-bold font-mono text-body mb-1" style={{ letterSpacing: '-0.01em', lineHeight: 1.3 }}>
+                    {selectedMovie.title}
+                  </h1>
+                  <div className="d-flex align-items-center gap-2 flex-wrap font-mono text-secondary" style={{ fontSize: '12px' }}>
+                    <span>{selectedMovie.year}</span>
+                    {selectedMovie.runtime > 0 && (
                       <>
-                        <span className="text-secondary" style={{ fontSize: '10px' }}>•</span>
-                        <p className="text-secondary mb-0 font-mono" style={{ fontSize: '12px' }}>{formatRuntime(movie.runtime)}</p>
+                        <span className="opacity-50">•</span>
+                        <span>{Math.floor(selectedMovie.runtime / 60)}h {selectedMovie.runtime % 60}m</span>
                       </>
                     )}
                   </div>
-                </div>
-                <div className="flex-shrink-0">
-                  <Dropdown>
-                    <Dropdown.Toggle 
-                      as={Badge}
-                      bg={movie.statusColor} 
-                      className={`rounded-pill px-2 py-1 d-flex align-items-center gap-1 font-mono border-0 ${movie.statusColor === 'warning' ? 'text-dark' : ''}`}
-                      style={{ fontSize: '10px', letterSpacing: '0.05em', cursor: 'pointer' }}
-                    >
-                      {movie.status} <ChevronDown size={12} />
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="font-mono shadow-sm border-0" style={{ fontSize: '12px' }}>
-                      {STATUS_OPTIONS.map(option => (
-                        <Dropdown.Item 
-                          key={option.label}
-                          onClick={() => handleStatusChange(movie.id, option.label, option.color)}
-                          active={movie.status === option.label}
-                        >
-                          <Badge bg={option.color} className={`me-2 ${option.color === 'warning' ? 'text-dark' : ''}`}> </Badge>
-                          {option.label}
-                        </Dropdown.Item>
-                      ))}
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-      </>
-      )}
 
-      <Modal show={!!selectedMovie} onHide={() => setSelectedMovie(null)} centered dialogClassName="modal-dialog-centered modal-fullscreen-sm-down" contentClassName="border-0 shadow-lg rounded-4">
-        {selectedMovie && (
-          <>
-            <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 1050 }}>
-              <Button variant="link" className="text-secondary p-0" onClick={() => setSelectedMovie(null)}>
-                <X size={24} />
-              </Button>
+                  {/* Buttons: visible on md+ inline, hidden on small */}
+                  <div className="d-none d-md-flex gap-2 flex-wrap mt-3">
+                    {selectedMovie.trailer && (
+                      <Button variant="outline-primary" size="sm"
+                        className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10"
+                        onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedMovie.trailer}`, '_blank')}>
+                        <Play size={13} fill="currentColor" />
+                        <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
+                      </Button>
+                    )}
+                    <Button variant="outline-danger" size="sm"
+                      className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
+                      onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}>
+                      <Trash2 size={13} />
+                      <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedMovie(null)}
+                  className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{ width: '30px', height: '30px', cursor: 'pointer' }}
+                >
+                  <X size={16} className="text-body" />
+                </button>
+              </div>
+
+              {/* Buttons: visible on small only, full-width row below poster+meta */}
+              <div className="d-flex d-md-none gap-2 flex-wrap mt-3">
+                {selectedMovie.trailer && (
+                  <Button variant="outline-primary" size="sm"
+                    className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10"
+                    onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedMovie.trailer}`, '_blank')}>
+                    <Play size={13} fill="currentColor" />
+                    <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
+                  </Button>
+                )}
+                <Button variant="outline-danger" size="sm"
+                  className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
+                  onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}>
+                  <Trash2 size={13} />
+                  <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
+                </Button>
+              </div>
+
             </div>
-            <Modal.Body className="p-4 p-sm-5">
-              <h1 className="fs-5 fw-medium font-mono text-uppercase tracking-tight mb-2">
-                {selectedMovie.title}
-              </h1>
-              <div className="bg-primary mb-4" style={{ height: '2px', width: '48px' }}></div>
 
-              <div className="mb-4">
-                <h3 className="text-secondary text-uppercase fw-bold mb-2" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Summary</h3>
-                <p className="font-mono text-body" style={{ fontSize: '14px', lineHeight: '1.6' }}>
-                  {selectedMovie.summary || 'No summary available.'}
-                </p>
-              </div>
-
-              <div className="mb-4">
-                <h3 className="text-secondary text-uppercase fw-bold mb-3" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Cast & Crew</h3>
-                <div className="d-flex flex-column gap-2">
-                  {(selectedMovie.cast || []).map((person: any, idx: number) => (
-                    <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom pb-2">
-                      <span className="fw-medium text-body" style={{ fontSize: '14px' }}>{person.name}</span>
-                      <span className="text-secondary font-mono" style={{ fontSize: '12px', fontStyle: person.role === 'Director' ? 'italic' : 'normal' }}>{person.role}</span>
-                    </div>
-                  ))}
+            <div className="px-4 pb-4 d-flex flex-column gap-4">
+              {(selectedMovie.summary) && (
+                <div>
+                  <h3 className="text-secondary text-uppercase fw-bold mb-2 font-mono" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Summary</h3>
+                  <p className="font-mono text-body m-0" style={{ fontSize: '13px', lineHeight: '1.6' }}>{selectedMovie.summary}</p>
                 </div>
-              </div>
-
-              {selectedMovie.trailer ? (
-                <Button 
-                  variant="primary" 
-                  className="w-100 py-3 d-flex align-items-center justify-content-center gap-2 font-mono fw-medium rounded-3"
-                  onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedMovie.trailer}`, '_blank')}
-                >
-                  <Play size={16} fill="currentColor" /> Watch Trailer
-                </Button>
-              ) : (
-                <Button 
-                  variant="secondary" 
-                  className="w-100 py-3 d-flex align-items-center justify-content-center gap-2 font-mono fw-medium rounded-3"
-                  disabled
-                >
-                  No Trailer Available
-                </Button>
               )}
-            </Modal.Body>
-          </>
+              {selectedMovie.cast?.length > 0 && (
+                <div>
+                  <h3 className="text-secondary text-uppercase fw-bold mb-2 font-mono" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Cast & Crew</h3>
+                  <div className="d-flex flex-column gap-2">
+                    {selectedMovie.cast.map((person: any, idx: number) => (
+                      <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom border-secondary border-opacity-10 pb-2">
+                        <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name}</span>
+                        <span className="text-secondary font-mono" style={{ fontSize: '11px', fontStyle: person.role === 'Director' ? 'italic' : 'normal' }}>{person.role}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Modal.Body>
         )}
       </Modal>
+
+      {/* Single delete */}
+      <Modal show={!!deleteTarget} onHide={() => setDeleteTarget(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
+        {deleteTarget && (
+          <Modal.Body className="p-4 p-sm-5 text-center">
+            <div className="mb-3">
+              <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10" style={{ width: '48px', height: '48px' }}>
+                <Trash2 size={22} className="text-danger" />
+              </div>
+            </div>
+            <h5 className="fw-bold font-mono text-body mb-2">Remove Entry</h5>
+            <p className="text-secondary font-mono mb-4" style={{ fontSize: '13px' }}>
+              Remove <strong className="text-body">{deleteTarget.title}</strong> from your library?
+            </p>
+            <div className="d-flex gap-2 justify-content-center">
+              <Button variant="light" className="px-4 py-2 font-mono fw-medium rounded border-0 bg-secondary bg-opacity-10 text-body"
+                onClick={() => setDeleteTarget(null)} style={{ fontSize: '13px' }}>Cancel</Button>
+              <Button variant="danger" className="px-4 py-2 font-mono fw-medium rounded border-0"
+                onClick={() => { removeMovie(deleteTarget.id); setDeleteTarget(null); }} style={{ fontSize: '13px' }}>Delete</Button>
+            </div>
+          </Modal.Body>
+        )}
+      </Modal>
+
+      {/* Bulk delete */}
+      <Modal show={bulkDeleteOpen} onHide={() => setBulkDeleteOpen(false)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
+        <Modal.Body className="p-4 p-sm-5 text-center">
+          <div className="mb-3">
+            <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10" style={{ width: '48px', height: '48px' }}>
+              <Trash2 size={22} className="text-danger" />
+            </div>
+          </div>
+          <h5 className="fw-bold font-mono text-body mb-2">Remove {selectedIds.size} Movies</h5>
+          <p className="text-secondary font-mono mb-4" style={{ fontSize: '13px' }}>
+            This will permanently remove {selectedIds.size} movie{selectedIds.size > 1 ? 's' : ''} from your library.
+          </p>
+          <div className="d-flex gap-2 justify-content-center">
+            <Button variant="light" className="px-4 py-2 font-mono fw-medium rounded border-0 bg-secondary bg-opacity-10 text-body"
+              onClick={() => setBulkDeleteOpen(false)} style={{ fontSize: '13px' }}>Cancel</Button>
+            <Button variant="danger" className="px-4 py-2 font-mono fw-medium rounded border-0"
+              onClick={handleBulkDelete} style={{ fontSize: '13px' }}>Delete All</Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+
     </Container>
   );
 }
