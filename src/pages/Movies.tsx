@@ -151,51 +151,79 @@ export default function Movies() {
       <Modal show={!!selectedMovie} onHide={() => setSelectedMovie(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
         {selectedMovie && (
           <Modal.Body className="p-0">
-            {/* Header row: poster + title + close — all in one tight block */}
-            <div className="d-flex gap-3 p-4 pb-3 align-items-start">
-              {selectedMovie.image && (
-                <div className="flex-shrink-0 shadow-sm rounded overflow-hidden" style={{ width: '72px', height: '108px' }}>
-                  <img src={selectedMovie.image} alt={selectedMovie.title} className="w-100 h-100 object-fit-cover" />
-                </div>
-              )}
-              <div className="flex-grow-1 min-w-0 pt-1">
-                <h1 className="fs-5 fw-bold font-mono text-body mb-1" style={{ letterSpacing: '-0.01em', lineHeight: 1.3 }}>
-                  {selectedMovie.title}
-                </h1>
-                <div className="d-flex align-items-center gap-2 flex-wrap font-mono text-secondary mb-3" style={{ fontSize: '12px' }}>
-                  <span>{selectedMovie.year}</span>
-                  {selectedMovie.runtime > 0 && (
-                    <>
-                      <span className="opacity-50">•</span>
-                      <span>{Math.floor(selectedMovie.runtime / 60)}h {selectedMovie.runtime % 60}m</span>
-                    </>
-                  )}
-                </div>
-                <div className="d-flex gap-2 flex-wrap">
-                  {selectedMovie.trailer && (
-                    <Button variant="outline-primary" size="sm"
-                      className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10"
-                      onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedMovie.trailer}`, '_blank')}>
-                      <Play size={13} fill="currentColor" />
-                      <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
+
+            {/* ── Header ── */}
+            <div className="p-4 pb-3">
+
+              {/* Top row: poster + meta + close */}
+              <div className="d-flex gap-3 align-items-start">
+                {selectedMovie.image && (
+                  <div className="flex-shrink-0 shadow-sm rounded overflow-hidden" style={{ width: '72px', height: '108px' }}>
+                    <img src={selectedMovie.image} alt={selectedMovie.title} className="w-100 h-100 object-fit-cover" />
+                  </div>
+                )}
+
+                <div className="flex-grow-1 min-w-0 pt-1">
+                  <h1 className="fs-5 fw-bold font-mono text-body mb-1" style={{ letterSpacing: '-0.01em', lineHeight: 1.3 }}>
+                    {selectedMovie.title}
+                  </h1>
+                  <div className="d-flex align-items-center gap-2 flex-wrap font-mono text-secondary" style={{ fontSize: '12px' }}>
+                    <span>{selectedMovie.year}</span>
+                    {selectedMovie.runtime > 0 && (
+                      <>
+                        <span className="opacity-50">•</span>
+                        <span>{Math.floor(selectedMovie.runtime / 60)}h {selectedMovie.runtime % 60}m</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Buttons: visible on md+ inline, hidden on small */}
+                  <div className="d-none d-md-flex gap-2 flex-wrap mt-3">
+                    {selectedMovie.trailer && (
+                      <Button variant="outline-primary" size="sm"
+                        className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10"
+                        onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedMovie.trailer}`, '_blank')}>
+                        <Play size={13} fill="currentColor" />
+                        <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
+                      </Button>
+                    )}
+                    <Button variant="outline-danger" size="sm"
+                      className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
+                      onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}>
+                      <Trash2 size={13} />
+                      <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
                     </Button>
-                  )}
-                  <Button variant="outline-danger" size="sm"
-                    className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
-                    onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}>
-                    <Trash2 size={13} />
-                    <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
-                  </Button>
+                  </div>
                 </div>
+
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedMovie(null)}
+                  className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{ width: '30px', height: '30px', cursor: 'pointer' }}
+                >
+                  <X size={16} className="text-body" />
+                </button>
               </div>
-              {/* Close button flush top-right */}
-              <button
-                onClick={() => setSelectedMovie(null)}
-                className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                style={{ width: '30px', height: '30px', cursor: 'pointer' }}
-              >
-                <X size={16} className="text-body" />
-              </button>
+
+              {/* Buttons: visible on small only, full-width row below poster+meta */}
+              <div className="d-flex d-md-none gap-2 flex-wrap mt-3">
+                {selectedMovie.trailer && (
+                  <Button variant="outline-primary" size="sm"
+                    className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10"
+                    onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedMovie.trailer}`, '_blank')}>
+                    <Play size={13} fill="currentColor" />
+                    <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
+                  </Button>
+                )}
+                <Button variant="outline-danger" size="sm"
+                  className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
+                  onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}>
+                  <Trash2 size={13} />
+                  <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
+                </Button>
+              </div>
+
             </div>
 
             <div className="px-4 pb-4 d-flex flex-column gap-4">

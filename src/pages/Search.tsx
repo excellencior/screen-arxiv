@@ -125,7 +125,12 @@ export default function Search() {
       summary: item.summary || item.overview,
       media_type: item.media_type,
       genre_ids: item.genre_ids || [],
-      ...(isMovie ? {} : { progress: { watched: 0, total: 10 }, season: 'Season 1', episodes: [] })
+      ...(isMovie ? {} : {
+        progress: { watched: 0, total: 10 },
+        number_of_seasons: item.number_of_seasons || 1,
+        seasons: [],
+        episodes: []
+      })
     };
 
     if (isMovie) {
@@ -147,11 +152,13 @@ export default function Search() {
         if (details) {
           const episodeRuntime = details.episode_run_time?.[0] || details.last_episode_to_air?.runtime || 0;
           const totalEpisodes = details.number_of_episodes || 0;
+          const numberOfSeasons = details.number_of_seasons || details.seasons?.length || 1;
           const seasons = details.seasons?.filter((s: any) => s.season_number > 0) || [];
           updateShow(item.id, {
             runtime: episodeRuntime * totalEpisodes,
             episode_runtime: episodeRuntime,
             total_episodes: totalEpisodes,
+            number_of_seasons: numberOfSeasons,
             seasons,
             trailer: details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
           });

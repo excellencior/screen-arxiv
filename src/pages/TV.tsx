@@ -212,68 +212,127 @@ export default function TV() {
         {selectedShow && (
           <Modal.Body className="p-0">
 
-            {/* ── Header: poster + title/meta + close ── */}
-            <div className="d-flex gap-3 p-4 pb-3 align-items-start">
+            {/* ── Header ── */}
+            <div className="p-4 pb-3">
 
-              {/* Back button OR spacer to keep layout consistent */}
-              <div className="flex-shrink-0 d-flex flex-column align-items-center gap-2" style={{ paddingTop: '2px' }}>
-                {selectedSeason !== null && (
-                  <button
-                    onClick={() => setSelectedSeason(null)}
-                    className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                    style={{ width: '30px', height: '30px', cursor: 'pointer' }}
-                    title="Back to seasons"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                  </button>
-                )}
-              </div>
+              {/* Top row: back + poster + meta + close */}
+              <div className="d-flex gap-3 align-items-start">
 
-              {/* Poster: show poster OR season poster when in season view */}
-              {(() => {
-                const posterPath = selectedSeason !== null ? activeSeason?.poster_path : null;
-                const imageUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : selectedShow.image;
-                return imageUrl && (
-                  <div className="flex-shrink-0 shadow-sm rounded overflow-hidden" style={{ width: '72px', height: '108px' }}>
-                    <img src={imageUrl} alt={selectedShow.title} className="w-100 h-100 object-fit-cover" />
-                  </div>
-                );
-              })()}
-
-              <div className="flex-grow-1 min-w-0 pt-1">
-                <h1 className="fs-5 fw-bold font-mono text-body mb-1" style={{ letterSpacing: '-0.01em', lineHeight: 1.3 }}>
-                  {selectedSeason !== null ? `Season ${selectedSeason}` : selectedShow.title}
-                </h1>
-
-                <div className="d-flex align-items-center gap-2 flex-wrap font-mono text-secondary mb-3" style={{ fontSize: '12px' }}>
-                  {selectedSeason !== null ? (
-                    // Season view: show episode progress for this season
-                    (() => {
-                      const eps = activeSeason?.episodes || [];
-                      const watched = eps.filter((e: any) => e.status === 'WATCHED').length;
-                      return eps.length > 0
-                        ? <><span>{eps.length} Episodes</span><span className="opacity-50">•</span><span className="text-success fw-bold">{watched}/{eps.length} watched</span></>
-                        : <span>{activeSeason?.episode_count || 0} Episodes</span>;
-                    })()
-                  ) : (
-                    // Show view: seasons + total episode progress
-                    <>
-                      <span>{selectedShow.year}</span>
-                      <span className="opacity-50">•</span>
-                      <span>{selectedShow.seasons?.length || 0} Seasons</span>
-                      <span className="opacity-50">•</span>
-                      <span>
-                        <span className="text-success fw-bold">{selectedShow.progress?.watched || 0}</span>
-                        <span className="opacity-50">/{selectedShow.total_episodes || 0}</span>
-                        <span className="ms-1">watched</span>
-                      </span>
-                    </>
+                {/* Back button */}
+                <div className="flex-shrink-0 d-flex flex-column align-items-center gap-2" style={{ paddingTop: '2px' }}>
+                  {selectedSeason !== null && (
+                    <button
+                      onClick={() => setSelectedSeason(null)}
+                      className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ width: '30px', height: '30px', cursor: 'pointer' }}
+                      title="Back to seasons"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                    </button>
                   )}
                 </div>
 
-                {/* Action buttons — only on show-level view */}
-                {selectedSeason === null && (
-                  <div className="d-flex gap-2 flex-wrap">
+                {/* Poster */}
+                {(() => {
+                  const posterPath = selectedSeason !== null ? activeSeason?.poster_path : null;
+                  const imageUrl = posterPath ? `https://image.tmdb.org/t/p/w200${posterPath}` : selectedShow.image;
+                  return imageUrl && (
+                    <div className="flex-shrink-0 shadow-sm rounded overflow-hidden" style={{ width: '72px', height: '108px' }}>
+                      <img src={imageUrl} alt={selectedShow.title} className="w-100 h-100 object-fit-cover" />
+                    </div>
+                  );
+                })()}
+
+                <div className="flex-grow-1 min-w-0 pt-1">
+                  <h1 className="fs-5 fw-bold font-mono text-body mb-1" style={{ letterSpacing: '-0.01em', lineHeight: 1.3 }}>
+                    {selectedSeason !== null ? `Season ${selectedSeason}` : selectedShow.title}
+                  </h1>
+
+                  <div className="d-flex align-items-center gap-2 flex-wrap font-mono text-secondary" style={{ fontSize: '12px' }}>
+                    {selectedSeason !== null ? (
+                      (() => {
+                        const eps = activeSeason?.episodes || [];
+                        const watched = eps.filter((e: any) => e.status === 'WATCHED').length;
+                        return eps.length > 0
+                          ? <><span>{eps.length} Episodes</span><span className="opacity-50">•</span><span className="text-success fw-bold">{watched}/{eps.length} watched</span></>
+                          : <span>{activeSeason?.episode_count || 0} Episodes</span>;
+                      })()
+                    ) : (
+                      <>
+                        <span>{selectedShow.year}</span>
+                        <span className="opacity-50">•</span>
+                        <span>{selectedShow.seasons?.length || 0} Seasons</span>
+                        <span className="opacity-50">•</span>
+                        <span>
+                          <span className="text-success fw-bold">{selectedShow.progress?.watched || 0}</span>
+                          <span className="opacity-50">/{selectedShow.total_episodes || 0}</span>
+                          <span className="ms-1">watched</span>
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Action buttons — md+ inline */}
+                  <div className="d-none d-md-flex gap-2 flex-wrap mt-3">
+                    {selectedSeason === null ? (
+                      <>
+                        <Button
+                          variant={selectedShow.status === 'WATCHED' ? 'success' : 'outline-secondary'}
+                          size="sm"
+                          className={`d-flex align-items-center gap-2 rounded border-0 ${selectedShow.status === 'WATCHED' ? 'text-white' : 'bg-secondary bg-opacity-10'}`}
+                          onClick={handleMarkAllSeasonsWatched}
+                        >
+                          <Check size={13} />
+                          <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>
+                            {selectedShow.status === 'WATCHED' ? 'Watched' : 'Mark all'}
+                          </span>
+                        </Button>
+                        {selectedShow.trailer && (
+                          <Button variant="outline-primary" size="sm"
+                            className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10"
+                            onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedShow.trailer}`, '_blank')}>
+                            <Play size={13} fill="currentColor" />
+                            <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
+                          </Button>
+                        )}
+                        <Button variant="outline-danger" size="sm"
+                          className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
+                          onClick={() => { setSelectedShow(null); setDeleteTarget(selectedShow); }}>
+                          <Trash2 size={13} />
+                          <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
+                        </Button>
+                      </>
+                    ) : (() => {
+                      const eps = activeSeason?.episodes || [];
+                      const allWatched = eps.length > 0 && eps.every((ep: any) => ep.status === 'WATCHED');
+                      return (
+                        <Button
+                          variant={allWatched ? 'success' : 'outline-secondary'} size="sm"
+                          className={`d-flex align-items-center gap-2 rounded border-0 ${allWatched ? 'text-white' : 'bg-secondary bg-opacity-10'}`}
+                          onClick={handleMarkAllWatched}
+                        >
+                          <Check size={13} />
+                          <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>{allWatched ? 'Watched' : 'Mark all'}</span>
+                        </Button>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Close */}
+                <button
+                  onClick={() => setSelectedShow(null)}
+                  className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{ width: '30px', height: '30px', cursor: 'pointer' }}
+                >
+                  <X size={16} className="text-body" />
+                </button>
+              </div>
+
+              {/* Action buttons — small screens, full row below poster+meta */}
+              <div className="d-flex d-md-none gap-2 flex-wrap mt-3">
+                {selectedSeason === null ? (
+                  <>
                     <Button
                       variant={selectedShow.status === 'WATCHED' ? 'success' : 'outline-secondary'}
                       size="sm"
@@ -299,11 +358,8 @@ export default function TV() {
                       <Trash2 size={13} />
                       <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
                     </Button>
-                  </div>
-                )}
-
-                {/* Mark all watched — season view */}
-                {selectedSeason !== null && (() => {
+                  </>
+                ) : (() => {
                   const eps = activeSeason?.episodes || [];
                   const allWatched = eps.length > 0 && eps.every((ep: any) => ep.status === 'WATCHED');
                   return (
@@ -319,18 +375,10 @@ export default function TV() {
                 })()}
               </div>
 
-              {/* Close */}
-              <button
-                onClick={() => setSelectedShow(null)}
-                className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                style={{ width: '30px', height: '30px', cursor: 'pointer' }}
-              >
-                <X size={16} className="text-body" />
-              </button>
             </div>
 
             {/* ── Seasons / Episodes list ── */}
-            <div className="border-top border-secondary border-opacity-10" style={{ maxHeight: '52vh', overflowY: 'auto' }} >
+            <div className="border-top border-secondary border-opacity-10" style={{ maxHeight: '52vh', overflowY: 'auto' }}>
               <AnimatePresence mode="wait">
                 {selectedSeason === null ? (
                   <motion.div key="seasons-view" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.15 }} className="d-flex flex-column">
