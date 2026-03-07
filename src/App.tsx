@@ -1,10 +1,5 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Movies from './pages/Movies';
 import TV from './pages/TV';
@@ -23,7 +18,7 @@ export default function App() {
           style: { fontSize: '13px', borderRadius: '12px', padding: '12px 20px' }
         }}
       />
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Analytics />} />
@@ -33,9 +28,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </LibraryProvider>
   );
 }
-
-
