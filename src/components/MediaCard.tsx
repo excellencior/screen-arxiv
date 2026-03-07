@@ -1,5 +1,5 @@
 import { Badge } from 'react-bootstrap';
-import { ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
 
@@ -9,6 +9,7 @@ interface MediaCardProps {
     onClick?: () => void;
     onStatusChange?: (id: number, status: string, color: string) => void;
     onAdd?: (item: any, status: string, color: string) => void;
+    onDelete?: (id: number) => void;
 }
 
 export const STATUS_OPTIONS = [
@@ -153,7 +154,7 @@ export function StatusDropdown({
     );
 }
 
-export default function MediaCard({ item, type, onClick, onStatusChange, onAdd }: MediaCardProps) {
+export default function MediaCard({ item, type, onClick, onStatusChange, onAdd, onDelete }: MediaCardProps) {
     const isSearch = type === 'search';
     const showStatusPill = !isSearch && onStatusChange;
 
@@ -239,6 +240,18 @@ export default function MediaCard({ item, type, onClick, onStatusChange, onAdd }
 
             {/* Action / Status */}
             <div className="flex-shrink-0 ms-2 d-flex align-items-center gap-2">
+                {!isSearch && onDelete && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                        className="border-0 bg-transparent p-1 rounded d-flex align-items-center justify-content-center"
+                        style={{ cursor: 'pointer', opacity: 0.35, transition: 'opacity 0.15s, color 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#dc3545'; }}
+                        onMouseLeave={e => { e.currentTarget.style.opacity = '0.35'; e.currentTarget.style.color = 'inherit'; }}
+                        title="Remove from library"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                )}
                 {isSearch ? (
                     <>
                         {onClick && (

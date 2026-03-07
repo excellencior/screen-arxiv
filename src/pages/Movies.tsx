@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Container, Dropdown, Button, Modal, Badge } from 'react-bootstrap';
-import { ChevronDown, Play, X, Plus } from 'lucide-react';
+import { ChevronDown, Play, X, Plus, Trash2 } from 'lucide-react';
 import { fetchMovieDetails } from '../services/tmdb';
 import { useLibrary } from '../context/LibraryContext';
 import { Link } from 'react-router-dom';
 import MediaCard from '../components/MediaCard';
 
 export default function Movies() {
-  const { movies, updateMovie } = useLibrary();
+  const { movies, updateMovie, removeMovie } = useLibrary();
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   const handleMovieClick = async (movie: any) => {
     setSelectedMovie(movie);
@@ -101,6 +102,7 @@ export default function Movies() {
                     type="movie"
                     onClick={() => handleMovieClick(movie)}
                     onStatusChange={handleStatusChange}
+                    onDelete={() => setDeleteTarget(movie)}
                   />
                 ))}
               </div>
@@ -197,8 +199,57 @@ export default function Movies() {
                   No Trailer Available
                 </Button>
               )}
+
+              <Button
+                variant="outline-danger"
+                className="w-100 py-2 mt-3 d-flex align-items-center justify-content-center gap-2 font-mono fw-medium rounded"
+                onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}
+                style={{ fontSize: '13px' }}
+              >
+                <Trash2 size={14} /> Remove from Library
+              </Button>
             </Modal.Body>
           </>
+        )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        show={!!deleteTarget}
+        onHide={() => setDeleteTarget(null)}
+        centered
+        contentClassName="border-0 shadow-lg rounded-4 overflow-hidden"
+      >
+        {deleteTarget && (
+          <Modal.Body className="p-4 p-sm-5 text-center">
+            <div className="mb-3">
+              <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10" style={{ width: '48px', height: '48px' }}>
+                <Trash2 size={22} className="text-danger" />
+              </div>
+            </div>
+            <h5 className="fw-bold font-mono text-body mb-2">Remove Entry</h5>
+            <p className="text-secondary font-mono mb-4" style={{ fontSize: '13px' }}>
+              Are you sure you want to remove <strong className="text-body">{deleteTarget.title}</strong> from your library?
+            </p>
+            <div className="d-flex gap-2 justify-content-center">
+              <Button
+                variant="light"
+                className="px-4 py-2 font-mono fw-medium rounded border-0 bg-secondary bg-opacity-10 text-body"
+                onClick={() => setDeleteTarget(null)}
+                style={{ fontSize: '13px' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                className="px-4 py-2 font-mono fw-medium rounded border-0"
+                onClick={() => { removeMovie(deleteTarget.id); setDeleteTarget(null); }}
+                style={{ fontSize: '13px' }}
+              >
+                Delete
+              </Button>
+            </div>
+          </Modal.Body>
         )}
       </Modal>
     </Container>

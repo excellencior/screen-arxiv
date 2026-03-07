@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Button, Modal } from 'react-bootstrap';
-import { Check, X, Plus, Play } from 'lucide-react';
+import { Check, X, Plus, Play, Trash2 } from 'lucide-react';
 import { fetchTVDetails, fetchTVSeason } from '../services/tmdb';
 import { useLibrary } from '../context/LibraryContext';
 import { Link } from 'react-router-dom';
@@ -8,9 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import MediaCard, { StatusDropdown, COLOR_MAP } from '../components/MediaCard';
 
 export default function TV() {
-  const { shows, updateShow } = useLibrary();
+  const { shows, updateShow, removeShow } = useLibrary();
   const [selectedShow, setSelectedShow] = useState<any>(null);
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   const handleShowClick = async (show: any) => {
     setSelectedShow(show);
@@ -153,7 +154,7 @@ export default function TV() {
     <Container className="py-3 px-4" style={{ maxWidth: '672px' }}>
       <div className="mb-5 d-flex align-items-center justify-content-between">
         <div>
-          <h1 className="fs-3 fw-medium font-mono text-body tracking-tight mb-2">TV Series</h1>
+          <h1 className="fs-3 fw-medium font-mono text-body tracking-tight mb-2">Series</h1>
           <p className="text-secondary font-mono m-0" style={{ fontSize: '13px' }}>{shows.length} entries</p>
         </div>
         <Button as={Link} to="/search" variant="outline-secondary" className="d-flex align-items-center gap-2 border-0 bg-secondary bg-opacity-10 text-body p-2 rounded">
@@ -184,6 +185,7 @@ export default function TV() {
                     type="tv"
                     onClick={() => handleShowClick(show)}
                     onStatusChange={handleStatusChange}
+                    onDelete={() => setDeleteTarget(show)}
                   />
                 ))}
               </div>
@@ -254,6 +256,17 @@ export default function TV() {
                   >
                     <Play size={14} fill="currentColor" />
                     <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
+                  </Button>
+                )}
+                {selectedSeason === null && (
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
+                    onClick={() => { setSelectedShow(null); setDeleteTarget(selectedShow); }}
+                  >
+                    <Trash2 size={14} />
+                    <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
                   </Button>
                 )}
               </div>
@@ -365,6 +378,46 @@ export default function TV() {
               </AnimatePresence>
             </Modal.Body>
           </>
+        )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        show={!!deleteTarget}
+        onHide={() => setDeleteTarget(null)}
+        centered
+        contentClassName="border-0 shadow-lg rounded-4 overflow-hidden"
+      >
+        {deleteTarget && (
+          <Modal.Body className="p-4 p-sm-5 text-center">
+            <div className="mb-3">
+              <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10" style={{ width: '48px', height: '48px' }}>
+                <Trash2 size={22} className="text-danger" />
+              </div>
+            </div>
+            <h5 className="fw-bold font-mono text-body mb-2">Remove Entry</h5>
+            <p className="text-secondary font-mono mb-4" style={{ fontSize: '13px' }}>
+              Are you sure you want to remove <strong className="text-body">{deleteTarget.title || deleteTarget.name}</strong> from your library?
+            </p>
+            <div className="d-flex gap-2 justify-content-center">
+              <Button
+                variant="light"
+                className="px-4 py-2 font-mono fw-medium rounded border-0 bg-secondary bg-opacity-10 text-body"
+                onClick={() => setDeleteTarget(null)}
+                style={{ fontSize: '13px' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                className="px-4 py-2 font-mono fw-medium rounded border-0"
+                onClick={() => { removeShow(deleteTarget.id); setDeleteTarget(null); }}
+                style={{ fontSize: '13px' }}
+              >
+                Delete
+              </Button>
+            </div>
+          </Modal.Body>
         )}
       </Modal>
     </Container>
