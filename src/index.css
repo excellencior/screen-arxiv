@@ -294,12 +294,12 @@ body.modal-open .min-vh-100 {
   display: inline-block;
   white-space: nowrap;
   flex-shrink: 0;
-  padding-right: 4rem;
-  /* No animation by default */
+  /* No padding-right here by default, so overflow detection is accurate */
 }
 
 /* Animation only kicks in when JS detects actual overflow */
 .title-scroll-container.is-overflowing span {
+  padding-right: 4rem; /* Spacing between loops */
   animation: continuousScroll 8s linear infinite;
 }
 

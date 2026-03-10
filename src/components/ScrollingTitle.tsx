@@ -10,17 +10,17 @@ interface ScrollingTitleProps {
 // Uses ResizeObserver to re-check on every layout change (window resize, sidebar, etc).
 export default function ScrollingTitle({ text, className = '', style }: ScrollingTitleProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const spanRef = useRef<HTMLSpanElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
   const [overflowing, setOverflowing] = useState(false);
 
   const check = useCallback(() => {
-    if (containerRef.current && spanRef.current) {
-      setOverflowing(spanRef.current.scrollWidth > containerRef.current.clientWidth);
+    if (containerRef.current && measureRef.current) {
+      // Use the measurement span (which has no padding) to check against container width
+      setOverflowing(measureRef.current.offsetWidth > containerRef.current.clientWidth);
     }
   }, []);
 
   useEffect(() => {
-    // Small defer so the container has its final rendered width after fonts/layout settle
     const t = setTimeout(check, 50);
     const ro = new ResizeObserver(check);
     if (containerRef.current) ro.observe(containerRef.current);
@@ -33,8 +33,13 @@ export default function ScrollingTitle({ text, className = '', style }: Scrollin
       className={`title-scroll-container${overflowing ? ' is-overflowing' : ''} ${className}`}
       style={style}
     >
-      <span ref={spanRef}>{text}</span>
-      {/* Duplicate for seamless loop — hidden via CSS when not overflowing */}
+      {/* Hidden span for accurate width measurement without padding */}
+      <span ref={measureRef} className="position-absolute invisible pb-5" style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+        {text}
+      </span>
+
+      <span>{text}</span>
+      {/* Duplicate for seamless loop — shown/hidden via CSS */}
       <span aria-hidden="true">{text}</span>
     </div>
   );
