@@ -1,5 +1,5 @@
 import { Badge } from 'react-bootstrap';
-import { ChevronDown, Plus, Check } from 'lucide-react';
+import { ChevronDown, Plus, Minus, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
 import ScrollingTitle from './ScrollingTitle';
@@ -125,7 +125,7 @@ export default function MediaCard({
     const handleClick = () => {
         if (selectionMode && onSelect) {
             onSelect(item.id);
-        } else if (!isSearch && onClick) {
+        } else if (onClick) {
             onClick();
         }
     };
@@ -137,7 +137,7 @@ export default function MediaCard({
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className={`card border-0 shadow-sm p-3 ${!isSearch || selectionMode ? 'cursor-pointer' : ''}`}
+            className={`card border-0 shadow-sm p-3 cursor-pointer`}
             onClick={handleClick}
             style={{
                 outline: isSelected ? '2px solid var(--accent-red, #dc3545)' : '2px solid transparent',
@@ -145,7 +145,7 @@ export default function MediaCard({
                 transition: 'outline 0.15s, background-color 0.15s',
             }}
         >
-            <div className="d-flex flex-row align-items-start gap-3 w-100">
+            <div className="d-flex flex-row align-items-center gap-3 w-100">
 
                 {/* Poster with selection overlay */}
                 <div className="flex-shrink-0 position-relative" style={{ width: '40px', height: '60px' }}>
@@ -219,30 +219,22 @@ export default function MediaCard({
 
                         {/* Status pill on the right */}
                         {!selectionMode && (
-                            <div className="flex-shrink-0 pt-1">
+                            <div className="flex-shrink-0">
                                 {isSearch ? (
-                                    <div className="d-flex align-items-center gap-2">
-                                        {onClick && (
-                                            <button
-                                                className="font-mono rounded border-0 text-body"
-                                                style={{ fontSize: '11px', padding: '4px 10px', cursor: 'pointer', backgroundColor: 'rgba(108,117,125,0.15)' }}
-                                                onClick={(e) => { e.stopPropagation(); onClick(); }}
-                                            >
-                                                Details
-                                            </button>
-                                        )}
+                                    <div className="d-flex align-items-center">
                                         {onAdd && (
                                             item.status ? (
-                                                <span style={{
-                                                    display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                                    padding: '3px 8px', borderRadius: '20px', fontSize: '11px',
-                                                    fontFamily: 'monospace', fontWeight: 600,
-                                                    backgroundColor: COLOR_MAP[item.statusColor] + '33',
-                                                    color: COLOR_MAP[item.statusColor], whiteSpace: 'nowrap',
-                                                }}>
-                                                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: COLOR_MAP[item.statusColor], flexShrink: 0 }} />
-                                                    {item.status}
-                                                </span>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); onDelete?.(item.id); }}
+                                                    style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                        padding: '4px 10px', borderRadius: '6px', border: 'none',
+                                                        cursor: 'pointer', fontSize: '11px', fontFamily: 'monospace',
+                                                        backgroundColor: 'rgba(224, 62, 62, 0.15)', color: '#e03e3e',
+                                                    }}
+                                                >
+                                                    <Minus size={14} /> Remove
+                                                </button>
                                             ) : (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); onAdd(item, 'WILL WATCH', 'warning'); }}

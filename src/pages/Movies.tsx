@@ -4,6 +4,7 @@ import { Play, X, Plus, Trash2, CheckSquare } from 'lucide-react';
 import { fetchMovieDetails } from '../services/tmdb';
 import { useLibrary } from '../context/LibraryContext';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import MediaCard from '../components/MediaCard';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -91,11 +92,13 @@ export default function Movies() {
         <div className="d-flex align-items-center gap-2">
           {!selectionMode ? (
             <>
-              <button onClick={() => setSelectionMode(true)}
-                className="border-0 bg-secondary bg-opacity-10 text-body p-2 rounded d-flex align-items-center"
-                title="Select items" style={{ cursor: 'pointer' }}>
-                <CheckSquare size={16} />
-              </button>
+              {movies.length > 0 && (
+                <button onClick={() => setSelectionMode(true)}
+                  className="border-0 bg-secondary bg-opacity-10 text-body p-2 rounded d-flex align-items-center"
+                  title="Select items" style={{ cursor: 'pointer' }}>
+                  <CheckSquare size={16} />
+                </button>
+              )}
               <Button as={Link} to="/search" variant="outline-secondary" className="d-flex align-items-center gap-2 border-0 bg-secondary bg-opacity-10 text-body p-2 rounded">
                 <Plus size={16} />
               </Button>
@@ -150,20 +153,28 @@ export default function Movies() {
       )}
 
       {/* ── Detail Modal ── */}
-      <Modal show={!!selectedMovie} onHide={() => setSelectedMovie(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
-        {selectedMovie && (
-          <div className="position-relative">
-            <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 10 }}>
+      <Modal show={!!selectedMovie} onHide={() => setSelectedMovie(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden" animation={false}>
+        <AnimatePresence>
+          {selectedMovie && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 12 }}>
               <button
                 onClick={() => setSelectedMovie(null)}
-                className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
-                style={{ width: '30px', height: '30px', cursor: 'pointer' }}
+                className="border-0 bg-secondary bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                style={{ width: '30px', height: '30px', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
               >
                 <X size={16} className="text-body" />
               </button>
             </div>
             
-            <Modal.Body className="p-0 scrollbar-hide" style={{ maxHeight: '85vh', overflowY: 'auto' }}>
+            <div className="scrollbar-hide" style={{ maxHeight: '85vh', overflowY: 'auto' }}>
+            
+            <Modal.Body className="p-0">
               {/* ── Header ── */}
               <div className="p-4 pb-3">
                 <div className="d-flex gap-3 align-items-start">
@@ -239,7 +250,8 @@ export default function Movies() {
                     <div className="d-flex flex-column gap-2">
                       {selectedMovie.cast.map((person: any, idx: number) => (
                         <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom border-secondary border-opacity-10 pb-2">
-                          <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name} <span className="text-secondary fw-normal">as</span> {person.role}</span>
+                          <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name}</span>
+                          <span className="text-secondary font-mono" style={{ fontSize: '11px' }}>{person.role}</span>
                         </div>
                       ))}
                     </div>
@@ -248,8 +260,10 @@ export default function Movies() {
               </div>
             </Modal.Body>
           </div>
-        )}
-      </Modal>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </Modal>
 
       {/* Single delete */}
       <Modal show={!!deleteTarget} onHide={() => setDeleteTarget(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">

@@ -5,6 +5,7 @@ import { searchMulti, fetchMovieDetails, fetchTVDetails } from '../services/tmdb
 import { useLibrary } from '../context/LibraryContext';
 import MediaCard from '../components/MediaCard';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Search() {
   const [query, setQuery] = useState('');
@@ -14,7 +15,7 @@ export default function Search() {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
-  const { addMovie, addShow, movies, shows, updateMovie, updateShow } = useLibrary();
+  const { addMovie, addShow, movies, shows, updateMovie, updateShow, removeMovie, removeShow } = useLibrary();
 
   useEffect(() => {
     if (!import.meta.env.VITE_TMDB_API_KEY || import.meta.env.VITE_TMDB_API_KEY === 'your_tmdb_api_key_here') {
@@ -71,6 +72,7 @@ export default function Search() {
         setSelectedItem({
           ...item,
           summary: details.overview || item.summary,
+          backdrop: details.backdrop_path ? `https://image.tmdb.org/t/p/original${details.backdrop_path}` : null,
           cast: details.credits?.cast?.slice(0, 5).map((c: any) => ({ name: c.name, role: c.character })) || [],
           runtime: details.runtime || 0,
           trailer: details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
@@ -82,6 +84,7 @@ export default function Search() {
         setSelectedItem({
           ...item,
           summary: details.overview || item.summary,
+          backdrop: details.backdrop_path ? `https://image.tmdb.org/t/p/original${details.backdrop_path}` : null,
           trailer: details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
           number_of_seasons: details.number_of_seasons || details.seasons?.length,
         });
@@ -135,7 +138,6 @@ export default function Search() {
 
     if (isMovie) {
       addMovie(newItem);
-      // Background fetch to get runtime for analytics
       fetchMovieDetails(item.id).then(details => {
         if (details) {
           updateMovie(item.id, {
@@ -147,7 +149,6 @@ export default function Search() {
       });
     } else {
       addShow(newItem);
-      // Background fetch to get runtime/seasons for analytics
       fetchTVDetails(item.id).then(details => {
         if (details) {
           const episodeRuntime = details.episode_run_time?.[0] || details.last_episode_to_air?.runtime || 0;
@@ -166,9 +167,39 @@ export default function Search() {
       });
     }
 
-    toast.success(`${newItem.title} marked as ${status}`, {
+    toast.success(`${newItem.title} added to library`, {
       icon: '✓',
-      style: { border: `1px solid var(--bs-${color})` }
+      duration: 3000,
+      style: {
+        background: '#f0fff4',
+        border: '1px solid #c6f6d5',
+        color: '#276749',
+        fontSize: '13px',
+        fontFamily: 'monospace',
+      }
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    const isMovie = results.find(r => r.id === id)?.media_type === 'movie';
+    const item = movies.find(m => m.id === id) || shows.find(s => s.id === id);
+    
+    if (isMovie) {
+      removeMovie(id);
+    } else {
+      removeShow(id);
+    }
+    
+    toast.error(`${item?.title || item?.name || 'Item'} removed from library`, {
+      icon: '−',
+      duration: 3000,
+      style: {
+        background: '#fff5f5',
+        border: '1px solid #fed7d7',
+        color: '#9b2c2c',
+        fontSize: '13px',
+        fontFamily: 'monospace',
+      }
     });
   };
 
@@ -257,6 +288,7 @@ export default function Search() {
                 item={displayItem}
                 type="search"
                 onAdd={handleAdd}
+                onDelete={handleDelete}
                 onClick={() => handleItemClick(item)}
               />
             );
@@ -268,47 +300,43 @@ export default function Search() {
         ) : null}
       </div>
 
-      <Modal
-        show={!!selectedItem}
-        onHide={() => setSelectedItem(null)}
-        centered
-        contentClassName="border-0 shadow-lg rounded-4 overflow-hidden"
-      >
-        {selectedItem && (
-          <>
-            {selectedItem.image && (
-              <div className="position-relative bg-secondary bg-opacity-10" style={{ height: '200px' }}>
-                <div className="position-absolute top-0 start-0 w-100 h-100" style={{
-                  backgroundImage: `url(${selectedItem.image})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  filter: 'blur(20px) opacity(0.5)'
-                }} />
-                <div className="position-absolute top-0 start-0 w-100 h-100" style={{
-                  background: 'linear-gradient(to top, var(--base-surface) 0%, transparent 100%)'
-                }} />
-              </div>
-            )}
-
-            <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 10 }}>
+      <Modal show={!!selectedItem} onHide={() => setSelectedItem(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden" animation={false}>
+        <AnimatePresence>
+          {selectedItem && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 12 }}>
               <button
                 onClick={() => setSelectedItem(null)}
-                className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
-                style={{ width: '30px', height: '30px', cursor: 'pointer' }}
+                className="border-0 bg-secondary bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                style={{ width: '30px', height: '30px', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
               >
                 <X size={16} className="text-body" />
               </button>
             </div>
 
-            <Modal.Body className="p-4 p-sm-5 pt-0 position-relative scrollbar-hide" style={{ marginTop: selectedItem.image ? '-60px' : '0', maxHeight: '85vh', overflowY: 'auto' }}>
-              <div className="d-flex gap-4 mb-4 mt-4">
+            <div className="scrollbar-hide" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+              {/* Hero Spotlight */}
+              {(selectedItem.backdrop || selectedItem.image) && (
+                <div className="position-relative" style={{ height: '300px' }}>
+                  <img src={selectedItem.backdrop || selectedItem.image} alt={selectedItem.title || selectedItem.name} className="w-100 h-100 object-fit-cover" />
+                  <div className="position-absolute bottom-0 start-0 w-100 h-100"
+                    style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, var(--bs-body-bg) 100%)' }} />
+                </div>
+              )}
+              <Modal.Body className="p-4 p-sm-5 pt-0 position-relative" style={{ marginTop: (selectedItem.backdrop || selectedItem.image) ? '-140px' : '0' }}>
+              <div className="d-flex flex-column flex-sm-row gap-4 mb-4 mt-4 align-items-sm-end">
                 {selectedItem.image && (
-                  <div className="flex-shrink-0 shadow-sm rounded overflow-hidden" style={{ width: '80px', height: '120px' }}>
+                  <div className="flex-shrink-0 shadow-lg rounded overflow-hidden d-none d-sm-block" style={{ width: '120px', height: '180px', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <img src={selectedItem.image} alt={selectedItem.title || selectedItem.name} className="w-100 h-100 object-fit-cover" />
                   </div>
                 )}
-                <div className="d-flex flex-column justify-content-end pb-1 min-w-0">
-                  <h1 className="fs-4 fw-bold font-mono text-body tracking-tight mb-1">
+                <div className="d-flex flex-column justify-content-end pb-2 min-w-0">
+                  <h1 className="fs-2 fw-bold font-mono text-body tracking-tight mb-2">
                     {selectedItem.title || selectedItem.name}
                   </h1>
                   <div className="d-flex align-items-center gap-2 flex-wrap font-mono text-secondary" style={{ fontSize: '12px' }}>
@@ -366,8 +394,10 @@ export default function Search() {
                 </Button>
               )}
             </Modal.Body>
-          </>
-        )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Modal>
     </Container>
   );
