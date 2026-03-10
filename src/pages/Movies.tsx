@@ -41,7 +41,7 @@ export default function Movies() {
   const handleMovieClick = async (movie: any) => {
     if (selectionMode) return;
     setSelectedMovie(movie);
-    if (movie.cast && movie.cast.length > 0 && movie.runtime !== undefined) return;
+    if (movie.cast && movie.cast.length > 0 && movie.cast[0].role && movie.runtime !== undefined) return;
     const details = await fetchMovieDetails(movie.id);
     if (details) {
       const cast = details.credits?.cast?.slice(0, 5).map((c: any) => ({ name: c.name, role: c.character })) || [];
@@ -210,7 +210,7 @@ export default function Movies() {
                       )}
                       <Button variant="outline-danger" size="sm"
                         className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
-                        onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}>
+                        onClick={() => { setDeleteTarget(selectedMovie); }}>
                         <Trash2 size={13} />
                         <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
                       </Button>
@@ -230,7 +230,7 @@ export default function Movies() {
                   )}
                   <Button variant="outline-danger" size="sm"
                     className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
-                    onClick={() => { setSelectedMovie(null); setDeleteTarget(selectedMovie); }}>
+                    onClick={() => { setDeleteTarget(selectedMovie); }}>
                     <Trash2 size={13} />
                     <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
                   </Button>
@@ -251,7 +251,7 @@ export default function Movies() {
                       {selectedMovie.cast.map((person: any, idx: number) => (
                         <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom border-secondary border-opacity-10 pb-2">
                           <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name}</span>
-                          <span className="text-secondary font-mono" style={{ fontSize: '11px' }}>{person.role}</span>
+                          <span className="text-secondary font-mono" style={{ fontSize: '11px' }}>{person.role || person.character}</span>
                         </div>
                       ))}
                     </div>
@@ -266,7 +266,7 @@ export default function Movies() {
   </Modal>
 
       {/* Single delete */}
-      <Modal show={!!deleteTarget} onHide={() => setDeleteTarget(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
+      <Modal show={!!deleteTarget} onHide={() => setDeleteTarget(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden" size="sm">
         {deleteTarget && (
           <Modal.Body className="p-4 p-sm-5 text-center">
             <div className="mb-3">
@@ -282,14 +282,14 @@ export default function Movies() {
               <Button variant="light" className="px-4 py-2 font-mono fw-medium rounded border-0 bg-secondary bg-opacity-10 text-body"
                 onClick={() => setDeleteTarget(null)} style={{ fontSize: '13px' }}>Cancel</Button>
               <Button variant="danger" className="px-4 py-2 font-mono fw-medium rounded border-0"
-                onClick={() => { removeMovie(deleteTarget.id); setDeleteTarget(null); }} style={{ fontSize: '13px' }}>Delete</Button>
+                onClick={() => { removeMovie(deleteTarget.id); setDeleteTarget(null); setSelectedMovie(null); }} style={{ fontSize: '13px' }}>Delete</Button>
             </div>
           </Modal.Body>
         )}
       </Modal>
 
       {/* Bulk delete */}
-      <Modal show={bulkDeleteOpen} onHide={() => setBulkDeleteOpen(false)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
+      <Modal show={bulkDeleteOpen} onHide={() => setBulkDeleteOpen(false)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden" size="sm">
         <Modal.Body className="p-4 p-sm-5 text-center">
           <div className="mb-3">
             <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10" style={{ width: '48px', height: '48px' }}>

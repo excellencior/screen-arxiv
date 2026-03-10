@@ -142,7 +142,7 @@ export default function Search() {
         if (details) {
           updateMovie(item.id, {
             runtime: details.runtime || 0,
-            cast: details.credits?.cast?.slice(0, 5) || [],
+            cast: details.credits?.cast?.slice(0, 5).map((c: any) => ({ name: c.name, role: c.character })) || [],
             trailer: details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
           });
         }
@@ -161,6 +161,7 @@ export default function Search() {
             total_episodes: totalEpisodes,
             number_of_seasons: numberOfSeasons,
             seasons,
+            cast: details.credits?.cast?.slice(0, 5).map((c: any) => ({ name: c.name, role: c.character })) || [],
             trailer: details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null,
           });
         }
@@ -250,16 +251,14 @@ export default function Search() {
       {results.length > 0 && (
         <div className="d-flex gap-2 mb-4">
           {(['all', 'movie', 'tv'] as const).map(f => (
-            <Button
+            <button
               key={f}
-              variant="light"
-              size="sm"
               onClick={() => setFilter(f)}
-              className={`rounded font-mono px-3 py-1 border ${filter === f ? 'bg-body border-secondary border-opacity-25 shadow-sm' : 'bg-secondary bg-opacity-10 text-secondary border-transparent'}`}
-              style={{ fontSize: '12px' }}
+              className={`rounded font-mono px-3 py-1 border d-flex align-items-center justify-content-center ${filter === f ? 'bg-body border-secondary border-opacity-25 shadow-sm text-body' : 'border-transparent bg-secondary bg-opacity-10 text-secondary'}`}
+              style={{ fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s ease' }}
             >
               {f === 'all' ? 'All' : f === 'movie' ? 'Movies' : 'TV Series'}
-            </Button>
+            </button>
           ))}
         </div>
       )}
@@ -376,7 +375,7 @@ export default function Search() {
                     {selectedItem.cast.map((person: any, idx: number) => (
                       <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom border-secondary border-opacity-10 pb-2">
                         <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name}</span>
-                        <span className="text-secondary font-mono" style={{ fontSize: '11px' }}>{person.role}</span>
+                        <span className="text-secondary font-mono" style={{ fontSize: '11px' }}>{person.role || person.character}</span>
                       </div>
                     ))}
                   </div>

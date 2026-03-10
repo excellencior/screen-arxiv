@@ -35,14 +35,15 @@ export default function TV() {
     if (selectionMode) return;
     setSelectedShow(show);
     setSelectedSeason(null);
-    if (show.seasons && show.seasons.length > 0 && show.runtime !== undefined) return;
+    if (show.seasons && show.seasons.length > 0 && show.cast && show.cast.length > 0 && show.runtime !== undefined) return;
     const details = await fetchTVDetails(show.id);
     if (details) {
       const trailer = details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null;
       const episodeRuntime = details.episode_run_time?.[0] || details.last_episode_to_air?.runtime || 0;
       const totalEpisodes = details.number_of_episodes || 0;
       const seasons = details.seasons?.filter((s: any) => s.season_number > 0) || [];
-      const updated = { ...show, seasons: show.seasons || seasons, runtime: episodeRuntime * totalEpisodes, episode_runtime: episodeRuntime, trailer, total_episodes: totalEpisodes };
+      const cast = details.credits?.cast?.slice(0, 5).map((c: any) => ({ name: c.name, role: c.character })) || [];
+      const updated = { ...show, seasons: show.seasons || seasons, runtime: episodeRuntime * totalEpisodes, episode_runtime: episodeRuntime, trailer, total_episodes: totalEpisodes, cast };
       setSelectedShow(updated);
       updateShow(show.id, updated);
     }
@@ -288,6 +289,21 @@ export default function TV() {
                           )}
                         </div>
 
+                        {/* Cast Section in Show Modal */}
+                        {selectedSeason === null && selectedShow.cast?.length > 0 && (
+                          <div className="mt-3">
+                            <h3 className="text-secondary text-uppercase fw-bold mb-2 font-mono" style={{ fontSize: '9px', letterSpacing: '0.1em' }}>Main Cast</h3>
+                            <div className="d-flex flex-column gap-1">
+                              {selectedShow.cast.slice(0, 3).map((person: any, idx: number) => (
+                                <div key={idx} className="d-flex justify-content-between align-items-baseline">
+                                  <span className="text-body font-mono" style={{ fontSize: '11px' }}>{person.name}</span>
+                                  <span className="text-secondary font-mono" style={{ fontSize: '10px' }}>{person.role || person.character}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Action buttons — md+ */}
                         <div className="d-none d-md-flex gap-2 flex-wrap mt-3">
                           {selectedSeason === null ? (
@@ -310,7 +326,7 @@ export default function TV() {
                               )}
                               <Button variant="outline-danger" size="sm"
                                 className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
-                                onClick={() => { setSelectedShow(null); setDeleteTarget(selectedShow); }}>
+                                onClick={() => { setDeleteTarget(selectedShow); }}>
                                 <Trash2 size={13} />
                                 <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
                               </Button>
@@ -353,7 +369,7 @@ export default function TV() {
                           )}
                           <Button variant="outline-danger" size="sm"
                             className="d-flex align-items-center gap-2 rounded border-0 bg-danger bg-opacity-10"
-                            onClick={() => { setSelectedShow(null); setDeleteTarget(selectedShow); }}>
+                            onClick={() => { setDeleteTarget(selectedShow); }}>
                             <Trash2 size={13} />
                             <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Remove</span>
                           </Button>
@@ -518,7 +534,7 @@ export default function TV() {
                           {selectedEpisode.cast.map((person: any, idx: number) => (
                             <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom border-secondary border-opacity-10 pb-2">
                               <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name}</span>
-                              <span className="text-secondary font-mono" style={{ fontSize: '11px' }}>{person.role}</span>
+                              <span className="text-secondary font-mono" style={{ fontSize: '11px' }}>{person.role || person.character}</span>
                             </div>
                           ))}
                         </div>
@@ -533,7 +549,7 @@ export default function TV() {
       </Modal>
 
       {/* Single delete */}
-      <Modal show={!!deleteTarget} onHide={() => setDeleteTarget(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
+      <Modal show={!!deleteTarget} onHide={() => setDeleteTarget(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden" size="sm">
         {deleteTarget && (
           <Modal.Body className="p-4 p-sm-5 text-center">
             <div className="mb-3">
@@ -549,14 +565,14 @@ export default function TV() {
               <Button variant="light" className="px-4 py-2 font-mono fw-medium rounded border-0 bg-secondary bg-opacity-10 text-body"
                 onClick={() => setDeleteTarget(null)} style={{ fontSize: '13px' }}>Cancel</Button>
               <Button variant="danger" className="px-4 py-2 font-mono fw-medium rounded border-0"
-                onClick={() => { removeShow(deleteTarget.id); setDeleteTarget(null); }} style={{ fontSize: '13px' }}>Delete</Button>
+                onClick={() => { removeShow(deleteTarget.id); setDeleteTarget(null); setSelectedShow(null); }} style={{ fontSize: '13px' }}>Delete</Button>
             </div>
           </Modal.Body>
         )}
       </Modal>
 
       {/* Bulk delete */}
-      <Modal show={bulkDeleteOpen} onHide={() => setBulkDeleteOpen(false)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
+      <Modal show={bulkDeleteOpen} onHide={() => setBulkDeleteOpen(false)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden" size="sm">
         <Modal.Body className="p-4 p-sm-5 text-center">
           <div className="mb-3">
             <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10" style={{ width: '48px', height: '48px' }}>
