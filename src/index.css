@@ -190,15 +190,18 @@ h6,
 
 .modal-content {
   border-radius: 12px;
-  border: 1px solid var(--struct-border);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   background-color: var(--base-bg);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.1);
+  outline: 1px solid rgba(255, 255, 255, 0.5);
+  outline-offset: -1px;
 }
 
 [data-bs-theme="dark"] .modal-content {
   background-color: var(--base-bg);
-  border: 1px solid var(--struct-border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  outline: none;
 }
 
 .hide-scrollbar::-webkit-scrollbar {
@@ -214,7 +217,8 @@ h6,
   transition: filter 0.3s ease;
 }
 
-.app-content.blur-active {
+.app-content.blur-active,
+body.modal-open .min-vh-100 {
   filter: blur(4px);
   pointer-events: none;
 }

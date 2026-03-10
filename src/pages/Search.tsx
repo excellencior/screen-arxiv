@@ -179,7 +179,7 @@ export default function Search() {
 
   return (
     <Container className="py-3 px-4" style={{ maxWidth: '672px' }}>
-      <div className="mb-4 d-flex align-items-baseline gap-2">
+      <div className="mb-4 d-flex flex-column flex-sm-row align-items-start align-items-sm-baseline gap-1 gap-sm-2">
         <h1 className="fs-5 fw-bold font-mono text-body m-0">Search</h1>
         <p className="text-secondary font-mono m-0" style={{ fontSize: '12px' }}>Find movies and TV series.</p>
       </div>
@@ -290,18 +290,17 @@ export default function Search() {
               </div>
             )}
 
-            <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 1050 }}>
-              <Button
-                variant="light"
-                className="rounded-circle p-1 d-flex align-items-center justify-content-center bg-body bg-opacity-75 shadow-sm border-0"
+            <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 10 }}>
+              <button
                 onClick={() => setSelectedItem(null)}
-                style={{ width: '32px', height: '32px' }}
+                className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                style={{ width: '30px', height: '30px', cursor: 'pointer' }}
               >
-                <X size={18} className="text-body" />
-              </Button>
+                <X size={16} className="text-body" />
+              </button>
             </div>
 
-            <Modal.Body className="p-4 p-sm-5 pt-0 position-relative" style={{ marginTop: selectedItem.image ? '-60px' : '0' }}>
+            <Modal.Body className="p-4 p-sm-5 pt-0 position-relative scrollbar-hide" style={{ marginTop: selectedItem.image ? '-60px' : '0', maxHeight: '85vh', overflowY: 'auto' }}>
               <div className="d-flex gap-4 mb-4 mt-4">
                 {selectedItem.image && (
                   <div className="flex-shrink-0 shadow-sm rounded overflow-hidden" style={{ width: '80px', height: '120px' }}>

@@ -5,6 +5,7 @@ import Movies from './pages/Movies';
 import TV from './pages/TV';
 import Search from './pages/Search';
 import Analytics from './pages/Analytics';
+import SaveData from './pages/SaveData';
 import { LibraryProvider } from './context/LibraryContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="movies" element={<Movies />} />
             <Route path="tv" element={<TV />} />
             <Route path="search" element={<Search />} />
+            <Route path="save-data" element={<SaveData />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

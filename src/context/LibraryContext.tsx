@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-type LibraryContextType = {
+export type LibraryContextType = {
   movies: any[];
   shows: any[];
   addMovie: (movie: any) => void;
@@ -9,6 +9,7 @@ type LibraryContextType = {
   updateShow: (id: number, data: any) => void;
   removeMovie: (id: number) => void;
   removeShow: (id: number) => void;
+  importData: (m: any[], s: any[]) => void;
 };
 
 const LibraryContext = createContext<LibraryContextType | undefined>(undefined);
@@ -66,8 +67,13 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setShows(prev => prev.filter(s => s.id !== id));
   };
 
+  const importData = (importedMovies: any[], importedShows: any[]) => {
+    setMovies(importedMovies);
+    setShows(importedShows);
+  };
+
   return (
-    <LibraryContext.Provider value={{ movies, shows, addMovie, addShow, updateMovie, updateShow, removeMovie, removeShow }}>
+    <LibraryContext.Provider value={{ movies, shows, addMovie, addShow, updateMovie, updateShow, removeMovie, removeShow, importData }}>
       {children}
     </LibraryContext.Provider>
   );

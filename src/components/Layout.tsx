@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar, Container, Offcanvas, Nav, Button } from 'react-bootstrap';
-import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3 } from 'lucide-react';
+import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveDownload } from 'lucide-react';
 
 export default function Layout() {
 	const [show, setShow] = useState(false);
@@ -67,6 +67,10 @@ export default function Layout() {
 						<Nav.Link as={Link} to="/search" onClick={handleClose} className={`d-flex align-items-center gap-2 rounded px-2 py-1 mb-1 ${location.pathname === '/search' ? 'bg-primary bg-opacity-10 text-primary fw-medium' : 'text-body hover-bg-light'}`} style={{ fontSize: '14px' }}>
 							<Search size={16} />
 							<span>Search</span>
+						</Nav.Link>
+						<Nav.Link as={Link} to="/save-data" onClick={handleClose} className={`d-flex align-items-center gap-2 rounded px-2 py-1 mb-1 ${location.pathname === '/save-data' ? 'bg-primary bg-opacity-10 text-primary fw-medium' : 'text-body hover-bg-light'}`} style={{ fontSize: '14px' }}>
+							<HardDriveDownload size={16} />
+							<span>Save Data</span>
 						</Nav.Link>
 					</Nav>
 
