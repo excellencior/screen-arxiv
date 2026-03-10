@@ -1,0 +1,8 @@
+{
+  "name": "screen-arxiv-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "^8.2.0"
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Screen Arxiv</string>
+    <string name="title_activity_main">Screen Arxiv</string>
+    <string name="package_name">com.screenarxiv.app</string>
+    <string name="custom_url_scheme">com.screenarxiv.app</string>
+</resources>
