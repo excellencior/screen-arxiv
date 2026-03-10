@@ -239,8 +239,7 @@ export default function Movies() {
                   <div className="d-flex flex-column gap-2">
                     {selectedMovie.cast.map((person: any, idx: number) => (
                       <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom border-secondary border-opacity-10 pb-2">
-                        <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name}</span>
-                        <span className="text-secondary font-mono" style={{ fontSize: '11px', fontStyle: person.role === 'Director' ? 'italic' : 'normal' }}>{person.role}</span>
+                        <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{person.name} <span className="text-secondary fw-normal">as</span> {person.role}</span>
                       </div>
                     ))}
                   </div>

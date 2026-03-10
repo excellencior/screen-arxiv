@@ -155,9 +155,9 @@ export const fetchTVSeason = async (id: number, seasonNumber: number) => {
     return {
       id,
       episodes: [
-        { id: id * 100 + 1, name: "Pilot", air_date: "2024-01-01" },
-        { id: id * 100 + 2, name: "Episode 2", air_date: "2024-01-08" },
-        { id: id * 100 + 3, name: "Episode 3", air_date: "2024-01-15" }
+        { id: id * 100 + 1, name: "Pilot", air_date: "2024-01-01", overview: "The journey begins as our heroes find themselves in a precarious situation.", guest_stars: [{ name: "Guest Star", character: "Mysterious Stranger" }] },
+        { id: id * 100 + 2, name: "Episode 2", air_date: "2024-01-08", overview: "A sudden betrayal forces the group to re-evaluate their alliances.", guest_stars: [{ name: "Another Actor", character: "Villain" }] },
+        { id: id * 100 + 3, name: "Episode 3", air_date: "2024-01-15", overview: "The climax of the first arc arrives with unexpected consequences.", guest_stars: [] }
       ]
     };
   }

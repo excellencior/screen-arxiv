@@ -17,6 +17,7 @@ export default function TV() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [selectedShow, setSelectedShow] = useState<any>(null);
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [selectedEpisode, setSelectedEpisode] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   const displayedShows = useMemo(() => {
@@ -56,6 +57,8 @@ export default function TV() {
         id: ep.id, title: ep.name,
         date: ep.air_date ? new Date(ep.air_date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'TBA',
         runtime: ep.runtime || 0, status: 'WILL WATCH', statusColor: 'warning',
+        summary: ep.overview,
+        cast: ep.guest_stars?.map((g: any) => ({ name: g.name, role: g.character })) || []
       }));
       const updatedSeasons = selectedShow.seasons.map((s: any) =>
         s.season_number === seasonNumber ? { ...s, episodes: formattedEps } : s
@@ -420,7 +423,9 @@ export default function TV() {
                         <p className="text-secondary font-mono" style={{ fontSize: '13px' }}>Loading episodes...</p>
                       </div>
                     ) : displayedEpisodes.map((ep: any, index: number) => (
-                      <div key={ep.id} className="d-flex flex-row align-items-center gap-3 p-3 border-bottom border-secondary border-opacity-10">
+                      <div key={ep.id} className="d-flex flex-row align-items-center gap-3 p-3 border-bottom border-secondary border-opacity-10 hover-bg-light"
+                           style={{ cursor: 'pointer' }}
+                           onClick={() => setSelectedEpisode({ ...ep, episodeNumber: index + 1 })}>
                         <div className="flex-shrink-0 text-secondary font-mono fw-medium" style={{ width: '22px', fontSize: '11px' }}>{String(index + 1).padStart(2, '0')}</div>
                         <div className="flex-grow-1 min-w-0">
                           <h3 className="fs-6 fw-medium text-truncate mb-1 font-mono text-body" style={{ fontSize: '13px' }}>{ep.title}</h3>
@@ -429,7 +434,7 @@ export default function TV() {
                             {ep.runtime > 0 && (<><span className="text-secondary opacity-50" style={{ fontSize: '10px' }}>•</span><p className="text-secondary mb-0 font-mono" style={{ fontSize: '11px' }}>{ep.runtime}m</p></>)}
                           </div>
                         </div>
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                           <StatusDropdown status={ep.status} statusColor={ep.statusColor}
                             onSelect={(s, c) => handleEpisodeStatusChange(selectedShow.id, selectedSeason, ep.id, s, c)} />
                         </div>
@@ -440,6 +445,77 @@ export default function TV() {
               </AnimatePresence>
             </div>
 
+          </Modal.Body>
+        )}
+      </Modal>
+
+      {/* ── Episode detail modal ── */}
+      <Modal show={!!selectedEpisode} onHide={() => setSelectedEpisode(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden">
+        {selectedEpisode && (
+          <Modal.Body className="p-0" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+            <div className="p-4 pb-3">
+              <div className="d-flex gap-3 align-items-start">
+                {(() => {
+                  let img = null;
+                  if (selectedEpisode.still_path) img = `https://image.tmdb.org/t/p/w200${selectedEpisode.still_path}`;
+                  else if (selectedSeason !== null && activeSeason?.poster_path) img = `https://image.tmdb.org/t/p/w200${activeSeason.poster_path}`;
+                  else if (selectedShow?.image) img = selectedShow.image;
+                  
+                  return img && (
+                    <div className="flex-shrink-0 shadow-sm rounded overflow-hidden" style={{ width: '72px', height: '108px' }}>
+                      <img src={img} alt={selectedEpisode.title} className="w-100 h-100 object-fit-cover" />
+                    </div>
+                  );
+                })()}
+
+                <div className="flex-grow-1 min-w-0 pt-1">
+                  <div className="text-secondary fw-bold text-uppercase mb-1 font-mono" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>
+                    S{String(selectedSeason).padStart(2, '0')} E{String(selectedEpisode.episodeNumber).padStart(2, '0')}
+                  </div>
+                  <h1 className="fs-5 fw-bold font-mono text-body mb-1" style={{ letterSpacing: '-0.01em', lineHeight: 1.3 }}>
+                    {selectedEpisode.title}
+                  </h1>
+                  <div className="d-flex align-items-center gap-2 flex-wrap font-mono text-secondary" style={{ fontSize: '12px' }}>
+                    <span>{selectedEpisode.date}</span>
+                    {selectedEpisode.runtime > 0 && (
+                      <><span className="opacity-50">•</span><span>{selectedEpisode.runtime}m</span></>
+                    )}
+                  </div>
+                </div>
+
+                <button onClick={() => setSelectedEpisode(null)} className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '30px', height: '30px', cursor: 'pointer' }}>
+                  <X size={16} className="text-body" />
+                </button>
+              </div>
+
+              <div className="mt-4">
+                <StatusDropdown status={selectedEpisode.status} statusColor={selectedEpisode.statusColor} onSelect={(s, c) => {
+                  handleEpisodeStatusChange(selectedShow.id, selectedSeason as number, selectedEpisode.id, s, c);
+                  setSelectedEpisode({ ...selectedEpisode, status: s, statusColor: c });
+                }} />
+              </div>
+            </div>
+
+            <div className="px-4 pb-4 d-flex flex-column gap-4">
+              {selectedEpisode.summary && (
+                <div>
+                  <h3 className="text-secondary text-uppercase fw-bold mb-2 font-mono" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Summary</h3>
+                  <p className="font-mono text-body m-0" style={{ fontSize: '13px', lineHeight: '1.6' }}>{selectedEpisode.summary}</p>
+                </div>
+              )}
+              {selectedEpisode.cast?.length > 0 && (
+                <div>
+                  <h3 className="text-secondary text-uppercase fw-bold mb-2 font-mono" style={{ fontSize: '10px', letterSpacing: '0.1em' }}>Guest Stars</h3>
+                  <div className="d-flex flex-column gap-2">
+                    {selectedEpisode.cast.map((c: any, idx: number) => (
+                      <div key={idx} className="d-flex justify-content-between align-items-baseline border-bottom border-secondary border-opacity-10 pb-2">
+                        <span className="fw-medium text-body font-mono" style={{ fontSize: '12px' }}>{c.name} <span className="text-secondary fw-normal">as</span> {c.role}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </Modal.Body>
         )}
       </Modal>

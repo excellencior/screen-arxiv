@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
 @import "tailwindcss";
 
 :root {
   /* 60% Base */
-  --base-bg: #FFFFFF;
-  --base-surface: #F9F9F9;
-  --base-text: #2F3437;
+  --base-bg: #ffffff;
+  --base-surface: #f9f9f9;
+  --base-text: #2f3437;
   /* Notion-like dark gray */
   --base-text-secondary: #787774;
   /* Notion-like subtle gray */
@@ -16,15 +16,15 @@
   --struct-hover: rgba(55, 53, 47, 0.08);
 
   /* 10% Accent */
-  --accent-green: #0F7B6C;
+  --accent-green: #0f7b6c;
   /* Watched */
-  --accent-blue: #0B6E99;
+  --accent-blue: #0b6e99;
   /* Watching */
-  --accent-yellow: #D9730D;
+  --accent-yellow: #d9730d;
   /* Will Watch */
-  --accent-red: #E03E3E;
+  --accent-red: #e03e3e;
   /* On Hold */
-  --accent-gray: #9B9A97;
+  --accent-gray: #9b9a97;
   /* DONE */
 
   /* Bootstrap Variable overrides */
@@ -37,7 +37,7 @@
   --bs-body-bg: var(--base-bg);
   --bs-body-color: var(--base-text);
   --bs-border-color: var(--struct-border);
-  --bs-font-sans-serif: 'JetBrains Mono', monospace;
+  --bs-font-sans-serif: "JetBrains Mono", monospace;
   --bs-border-radius: 6px;
   --bs-border-radius-lg: 8px;
 }
@@ -46,8 +46,8 @@
   /* 60% Base */
   --base-bg: #191919;
   --base-surface: #202020;
-  --base-text: #EAEAEA;
-  --base-text-secondary: #9B9B9B;
+  --base-text: #eaeaea;
+  --base-text-secondary: #9b9b9b;
 
   /* 30% Structural */
   --struct-border: rgba(255, 255, 255, 0.1);
@@ -57,13 +57,13 @@
   /* 10% Accent - adjusted for dark mode */
   --accent-green: #448361;
   /* Watched */
-  --accent-blue: #337EA9;
+  --accent-blue: #337ea9;
   /* Watching */
-  --accent-yellow: #CB912F;
+  --accent-yellow: #cb912f;
   /* Will Watch */
-  --accent-red: #D44C47;
+  --accent-red: #d44c47;
   /* On Hold */
-  --accent-gray: #5A5A5A;
+  --accent-gray: #5a5a5a;
   /* DONE */
 
   /* Bootstrap Variable overrides */
@@ -73,7 +73,7 @@
 }
 
 body {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   background-color: var(--base-bg);
   color: var(--base-text);
   -webkit-font-smoothing: antialiased;
@@ -87,13 +87,13 @@ h4,
 h5,
 h6,
 .font-display {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 500;
   letter-spacing: -0.01em;
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
 }
 
 .text-secondary {
@@ -131,7 +131,9 @@ h6,
   border: 1px solid var(--struct-border);
   background-color: var(--base-surface);
   box-shadow: var(--struct-card-shadow);
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 [data-bs-theme="dark"] .card {
@@ -147,10 +149,38 @@ h6,
   background-color: var(--struct-hover);
 }
 
-.offcanvas {
+.custom-offcanvas {
   background-color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(16px);
   border-right: 1px solid var(--struct-border);
+  transition: opacity 0.15s ease-out, transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.2) !important;
+  transform-origin: top left !important;
+}
+
+.offcanvas-start.custom-offcanvas {
+  transform: scale(0.9) translate(-10px, -10px) !important;
+  opacity: 0 !important;
+  visibility: visible !important;
+}
+
+.offcanvas-start.custom-offcanvas.show {
+  transform: scale(1) translate(0, 0) !important;
+  opacity: 1 !important;
+}
+
+.offcanvas-body {
+  overflow-y: auto;
+}
+
+.offcanvas-body::-webkit-scrollbar {
+  width: 4px;
+}
+.offcanvas-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.offcanvas-body::-webkit-scrollbar-thumb {
+  background-color: var(--struct-border);
+  border-radius: 4px;
 }
 
 [data-bs-theme="dark"] .offcanvas {
@@ -207,8 +237,20 @@ h6,
   overflow: hidden;
   white-space: nowrap;
   position: relative;
-  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent);
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 5%,
+    black 95%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 10px,
+    black calc(100% - 10px),
+    transparent
+  );
 }
 
 .marquee-text:hover {
