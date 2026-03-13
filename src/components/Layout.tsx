@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar, Container, Offcanvas, Nav, Button, Dropdown } from 'react-bootstrap';
 import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveDownload, MoreHorizontal } from 'lucide-react';
