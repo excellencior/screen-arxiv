@@ -54,22 +54,24 @@ export default function TV() {
     if (existing?.episodes?.length > 0) { setSelectedSeason(seasonNumber); return; }
     const seasonData = await fetchTVSeason(selectedShow.id, seasonNumber);
     if (seasonData?.episodes) {
+      const isSeasonWatched = existing?.status === 'WATCHED' || selectedShow.status === 'WATCHED';
       const formattedEps = seasonData.episodes.map((ep: any) => ({
         id: ep.id, title: ep.name,
         date: ep.air_date ? new Date(ep.air_date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'TBA',
         runtime: ep.runtime || 0,
-        status: selectedShow.status === 'WATCHED' ? 'WATCHED' : 'WILL WATCH',
-        statusColor: selectedShow.status === 'WATCHED' ? 'success' : 'warning',
+        status: isSeasonWatched ? 'WATCHED' : 'WILL WATCH',
+        statusColor: isSeasonWatched ? 'success' : 'warning',
         summary: ep.overview,
         cast: ep.guest_stars?.map((g: any) => ({ name: g.name, role: g.character })) || []
       }));
       const updatedSeasons = selectedShow.seasons.map((s: any) =>
-        s.season_number === seasonNumber ? { ...s, episodes: formattedEps } : s
+        s.season_number === seasonNumber ? { ...s, episodes: formattedEps, status: isSeasonWatched ? 'WATCHED' : (s.status || 'WILL WATCH') } : s
       );
+      const total = selectedShow.total_episodes || updatedSeasons.reduce((acc: number, s: any) => acc + (s.episode_count || s.episodes?.length || 0), 0);
+      const { status, statusColor, watchedCount } = deriveShowStatus(updatedSeasons, total);
       const allEps = updatedSeasons.flatMap((s: any) => s.episodes || []);
-      const watchedCount = allEps.filter((e: any) => e.status === 'WATCHED').length;
       const totalRuntime = allEps.reduce((acc: number, ep: any) => acc + (ep.runtime || 0), 0);
-      const updated = { ...selectedShow, seasons: updatedSeasons, progress: { watched: watchedCount, total: selectedShow.total_episodes || allEps.length }, runtime: totalRuntime || selectedShow.runtime };
+      const updated = { ...selectedShow, seasons: updatedSeasons, progress: { watched: watchedCount, total }, status, statusColor, runtime: totalRuntime || selectedShow.runtime };
       setSelectedShow(updated);
       updateShow(selectedShow.id, updated);
       setSelectedSeason(seasonNumber);
@@ -77,11 +79,22 @@ export default function TV() {
   };
 
   const deriveShowStatus = (seasons: any[], totalEpisodes: number) => {
-    const allEps = seasons.flatMap((s: any) => s.episodes || []);
-    const watchedCount = allEps.filter((e: any) => e.status === 'WATCHED').length;
+    let watchedCount = 0;
+    let hasOnHold = false;
+    let hasWatching = false;
+
+    seasons.forEach(s => {
+      if (s.episodes?.length > 0) {
+        const seasonWatched = s.episodes.filter((e: any) => e.status === 'WATCHED').length;
+        watchedCount += seasonWatched;
+        if (s.episodes.some((e: any) => e.status === 'ON HOLD')) hasOnHold = true;
+        if (s.episodes.some((e: any) => e.status === 'WATCHING')) hasWatching = true;
+      } else if (s.status === 'WATCHED') {
+        watchedCount += (s.episode_count || 0);
+      }
+    });
+
     const allWatched = watchedCount >= totalEpisodes && totalEpisodes > 0;
-    const hasOnHold = allEps.some((e: any) => e.status === 'ON HOLD');
-    const hasWatching = allEps.some((e: any) => e.status === 'WATCHING');
     const hasWatched = watchedCount > 0;
     let status: string, statusColor: string;
     if (allWatched) { status = 'WATCHED'; statusColor = 'success'; }
@@ -94,9 +107,13 @@ export default function TV() {
   const handleMarkAllWatched = () => {
     if (!selectedShow || selectedSeason === null) return;
     const updatedSeasons = selectedShow.seasons.map((s: any) =>
-      s.season_number === selectedSeason ? { ...s, episodes: (s.episodes || []).map((ep: any) => ({ ...ep, status: 'WATCHED', statusColor: 'success' })) } : s
+      s.season_number === selectedSeason ? {
+        ...s,
+        status: 'WATCHED',
+        episodes: (s.episodes || []).map((ep: any) => ({ ...ep, status: 'WATCHED', statusColor: 'success' }))
+      } : s
     );
-    const total = selectedShow.total_episodes || updatedSeasons.flatMap((s: any) => s.episodes || []).length;
+    const total = selectedShow.total_episodes || updatedSeasons.reduce((acc: number, s: any) => acc + (s.episode_count || s.episodes?.length || 0), 0);
     const { status, statusColor, watchedCount } = deriveShowStatus(updatedSeasons, total);
     const updated = { ...selectedShow, seasons: updatedSeasons, progress: { watched: watchedCount, total }, status, statusColor };
     setSelectedShow(updated);
@@ -105,8 +122,12 @@ export default function TV() {
 
   const handleMarkAllSeasonsWatched = () => {
     if (!selectedShow?.seasons) return;
-    const updatedSeasons = selectedShow.seasons.map((s: any) => ({ ...s, episodes: (s.episodes || []).map((ep: any) => ({ ...ep, status: 'WATCHED', statusColor: 'success' })) }));
-    const total = selectedShow.total_episodes || updatedSeasons.flatMap((s: any) => s.episodes || []).length;
+    const updatedSeasons = selectedShow.seasons.map((s: any) => ({
+      ...s,
+      status: 'WATCHED',
+      episodes: (s.episodes || []).map((ep: any) => ({ ...ep, status: 'WATCHED', statusColor: 'success' }))
+    }));
+    const total = selectedShow.total_episodes || updatedSeasons.reduce((acc: number, s: any) => acc + (s.episode_count || s.episodes?.length || 0), 0);
     const updated = { ...selectedShow, seasons: updatedSeasons, progress: { watched: total, total }, status: 'WATCHED', statusColor: 'success' };
     setSelectedShow(updated);
     updateShow(selectedShow.id, updated);
@@ -115,12 +136,17 @@ export default function TV() {
   const handleEpisodeStatusChange = (showId: number, seasonNumber: number, episodeId: number, newStatus: string, newColor: string) => {
     const show = shows.find(s => s.id === showId);
     if (!show?.seasons) return;
-    const updatedSeasons = show.seasons.map((s: any) =>
-      s.season_number === seasonNumber ? { ...s, episodes: (s.episodes || []).map((ep: any) => ep.id === episodeId ? { ...ep, status: newStatus, statusColor: newColor } : ep) } : s
-    );
-    const total = show.total_episodes || updatedSeasons.flatMap((s: any) => s.episodes || []).length;
+    const updatedSeasons = show.seasons.map((s: any) => {
+      if (s.season_number === seasonNumber) {
+        const updatedEps = (s.episodes || []).map((ep: any) => ep.id === episodeId ? { ...ep, status: newStatus, statusColor: newColor } : ep);
+        const allWatched = updatedEps.length > 0 && updatedEps.every((e: any) => e.status === 'WATCHED');
+        return { ...s, episodes: updatedEps, status: allWatched ? 'WATCHED' : 'WATCHING' };
+      }
+      return s;
+    });
+    const total = show.total_episodes || updatedSeasons.reduce((acc: number, s: any) => acc + (s.episode_count || s.episodes?.length || 0), 0);
     const { status, statusColor, watchedCount } = deriveShowStatus(updatedSeasons, total);
-    const updated = { ...show, seasons: updatedSeasons, progress: { ...show.progress, watched: watchedCount }, status, statusColor };
+    const updated = { ...show, seasons: updatedSeasons, progress: { ...show.progress, watched: watchedCount, total }, status, statusColor };
     if (selectedShow?.id === showId) setSelectedShow(updated);
     updateShow(showId, updated);
   };
@@ -362,7 +388,7 @@ export default function TV() {
                               </Button>
                               {selectedShow.trailer && (
                                 <Button variant="outline-primary" size="sm"
-                                  className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10"
+                                  className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10 shadow-none"
                                   onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedShow.trailer}`, '_blank')}>
                                   <Play size={13} fill="currentColor" />
                                   <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
@@ -405,7 +431,7 @@ export default function TV() {
                           </Button>
                           {selectedShow.trailer && (
                             <Button variant="outline-primary" size="sm"
-                              className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10"
+                              className="d-flex align-items-center gap-2 rounded border-0 bg-primary bg-opacity-10 shadow-none"
                               onClick={() => window.open(`https://www.youtube.com/watch?v=${selectedShow.trailer}`, '_blank')}>
                               <Play size={13} fill="currentColor" />
                               <span className="font-mono fw-medium" style={{ fontSize: '11px' }}>Trailer</span>
