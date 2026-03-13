@@ -129,53 +129,92 @@ h6,
   color: inherit !important;
 }
 
-/* ── Filter Buttons (Analytics) ── */
-.filter-btn {
-  background-color: var(--struct-hover) !important;
-  color: var(--base-text-secondary) !important;
-  border: 1px solid transparent !important;
-  box-shadow: none !important;
-  transition: background-color 0.2s ease, color 0.2s ease !important;
+/* ── Filter Grid (Analytics) ── */
+.filter-grid {
+  display: flex;
+  gap: 8px;
 }
 
-.filter-btn:hover {
-  background-color: rgba(55, 53, 47, 0.12) !important;
-  color: var(--base-text) !important;
-  box-shadow: none !important;
+.filter-grid-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--struct-border);
+  border-radius: 10px;
+  padding: 8px;
 }
 
-.filter-btn:focus,
-.filter-btn:active,
-.filter-btn:active:focus {
-  background-color: var(--struct-hover) !important;
-  color: var(--base-text-secondary) !important;
-  box-shadow: none !important;
-  border-color: transparent !important;
+.filter-grid-type {
+  flex: 0 0 auto;
 }
 
-[data-bs-theme="dark"] .filter-btn:hover {
-  background-color: rgba(255, 255, 255, 0.12) !important;
+.filter-grid-status {
+  flex: 1;
 }
 
-.filter-btn-active,
-.filter-btn-active:hover,
-.filter-btn-active:focus,
-.filter-btn-active:active,
-.filter-btn-active:active:focus {
-  background-color: rgba(11, 110, 153, 0.15) !important;
-  color: var(--accent-blue) !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
+/* ── Toggle Chips ── */
+.toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--struct-hover);
+  color: var(--base-text-secondary);
+  font-family: "PT Sans", sans-serif;
+  font-size: 11px;
   font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
-[data-bs-theme="dark"] .filter-btn-active,
-[data-bs-theme="dark"] .filter-btn-active:hover,
-[data-bs-theme="dark"] .filter-btn-active:focus,
-[data-bs-theme="dark"] .filter-btn-active:active,
-[data-bs-theme="dark"] .filter-btn-active:active:focus {
-  background-color: rgba(51, 126, 169, 0.2) !important;
-  color: #6bb8db !important;
+.toggle-chip:hover {
+  background: rgba(55, 53, 47, 0.12);
+}
+
+[data-bs-theme="dark"] .toggle-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.toggle-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--base-text-secondary);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggle-chip-active {
+  background: rgba(11, 110, 153, 0.12);
+  color: var(--accent-blue);
+}
+
+.toggle-chip-active:hover {
+  background: rgba(11, 110, 153, 0.18);
+}
+
+.toggle-chip-active .toggle-chip-dot {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+[data-bs-theme="dark"] .toggle-chip-active {
+  background: rgba(51, 126, 169, 0.18);
+  color: #6bb8db;
+}
+
+[data-bs-theme="dark"] .toggle-chip-active:hover {
+  background: rgba(51, 126, 169, 0.25);
+}
+
+[data-bs-theme="dark"] .toggle-chip-active .toggle-chip-dot {
+  background: #6bb8db;
+  border-color: #6bb8db;
 }
 
 [data-bs-theme="dark"] .btn-primary:hover {

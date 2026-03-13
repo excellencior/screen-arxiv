@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Container, Button } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 import {
     BarChart3, Film, Tv, Clock, TrendingUp, Layers,
     ListChecks, Trophy, CalendarDays, Clapperboard, Lightbulb
@@ -18,7 +18,7 @@ import {
     computeViewingBehavior,
 } from '../services/analytics';
 
-import { FilterType, StatusFilter, STATUS_COLOR_MAP } from '../types';
+import { StatusToggle, STATUS_COLOR_MAP } from '../types';
 
 // ─── Stat Card ──────────────────────────────────────────────
 
@@ -32,6 +32,21 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: any; label: string;
             <span className="fw-bold font-mono text-body" style={{ fontSize: '22px', lineHeight: 1.1 }}>{value}</span>
             {sub && <span className="text-secondary font-mono" style={{ fontSize: '10px' }}>{sub}</span>}
         </div>
+    );
+}
+
+// ─── Toggle Chip ────────────────────────────────────────────
+
+function ToggleChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`toggle-chip ${active ? 'toggle-chip-active' : ''}`}
+        >
+            <span className="toggle-chip-dot" />
+            {label}
+        </button>
     );
 }
 
@@ -183,13 +198,13 @@ function TopList({ items, emptyMsg }: { items: { id: number; title: string; deta
 // ═══════════════════════════════════════════════════════════════
 
 export default function Analytics() {
-    const { 
-        movies, 
-        shows, 
-        analyticsFilter: filter, 
-        setAnalyticsFilter: setFilter, 
-        analyticsStatusFilter: statusFilter, 
-        setAnalyticsStatusFilter: setStatusFilter 
+    const {
+        movies,
+        shows,
+        typeToggle,
+        statusToggle,
+        setTypeToggle,
+        setStatusToggle
     } = useLibrary();
     const [genreMap, setGenreMap] = useState<Map<number, string>>(new Map());
 
@@ -197,18 +212,38 @@ export default function Analytics() {
         fetchGenreMap().then(setGenreMap);
     }, []);
 
+    const toggleType = (key: 'movies' | 'tv') => {
+        setTypeToggle({ ...typeToggle, [key]: !typeToggle[key] });
+    };
+
+    const toggleStatus = (key: keyof StatusToggle) => {
+        setStatusToggle({ ...statusToggle, [key]: !statusToggle[key] });
+    };
+
     // Apply filters
     const filteredMovies = useMemo(() => {
-        let m = filter === 'tv' ? [] : movies;
-        if (statusFilter !== 'all') m = m.filter(x => x.status === statusFilter || (statusFilter === 'WATCHED' && x.status === 'DONE'));
-        return m;
-    }, [movies, filter, statusFilter]);
+        if (!typeToggle.movies) return [];
+        return movies.filter(x => {
+            const s = x.status;
+            if ((s === 'WATCHED' || s === 'DONE') && statusToggle.WATCHED) return true;
+            if (s === 'WATCHING' && statusToggle.WATCHING) return true;
+            if (s === 'WILL WATCH' && statusToggle['WILL WATCH']) return true;
+            if (s === 'ON HOLD' && statusToggle['ON HOLD']) return true;
+            return false;
+        });
+    }, [movies, typeToggle, statusToggle]);
 
     const filteredShows = useMemo(() => {
-        let s = filter === 'movies' ? [] : shows;
-        if (statusFilter !== 'all') s = s.filter(x => x.status === statusFilter || (statusFilter === 'WATCHED' && x.status === 'DONE'));
-        return s;
-    }, [shows, filter, statusFilter]);
+        if (!typeToggle.tv) return [];
+        return shows.filter(x => {
+            const st = x.status;
+            if ((st === 'WATCHED' || st === 'DONE') && statusToggle.WATCHED) return true;
+            if (st === 'WATCHING' && statusToggle.WATCHING) return true;
+            if (st === 'WILL WATCH' && statusToggle['WILL WATCH']) return true;
+            if (st === 'ON HOLD' && statusToggle['ON HOLD']) return true;
+            return false;
+        });
+    }, [shows, typeToggle, statusToggle]);
 
     // Compute all stats
     const overview = useMemo(() => computeOverviewStats(filteredMovies, filteredShows), [filteredMovies, filteredShows]);
@@ -225,6 +260,10 @@ export default function Analytics() {
     const watchHours = Math.floor((overview.totalWatchTimeMinutes % (24 * 60)) / 60);
 
     const isEmpty = totalItems === 0;
+
+    // Sections conditional on type toggles
+    const showMovieSections = typeToggle.movies;
+    const showTvSections = typeToggle.tv;
 
     return (
         <Container className="py-3 px-4" style={{ maxWidth: '672px' }}>
@@ -247,35 +286,21 @@ export default function Analytics() {
                 </div>
             </div>
 
-            {/* Filter Bar */}
-            <div className="d-flex gap-2 mb-4 flex-wrap">
-                <div className="d-flex gap-1">
-                    {(['all', 'movies', 'tv'] as FilterType[]).map(f => (
-                        <Button
-                            key={f}
-                            variant="light"
-                            size="sm"
-                            onClick={() => setFilter(f)}
-                            className={`rounded font-mono px-3 py-1 filter-btn ${filter === f ? 'filter-btn-active' : ''}`}
-                            style={{ fontSize: '11px' }}
-                        >
-                            {f === 'all' ? 'All' : f === 'movies' ? 'Movies' : 'TV Series'}
-                        </Button>
-                    ))}
+            {/* Filter Grid */}
+            <div className="filter-grid mb-4">
+                <div className="filter-grid-col filter-grid-type">
+                    <ToggleChip label="Movies" active={typeToggle.movies} onClick={() => toggleType('movies')} />
+                    <ToggleChip label="Series" active={typeToggle.tv} onClick={() => toggleType('tv')} />
                 </div>
-                <div className="d-flex gap-1">
-                    {(['WATCHED', 'WATCHING', 'WILL WATCH', 'ON HOLD'] as StatusFilter[]).map(s => (
-                        <Button
-                            key={s}
-                            variant="light"
-                            size="sm"
-                            onClick={() => setStatusFilter(s)}
-                            className={`rounded font-mono px-2 py-1 filter-btn ${statusFilter === s ? 'filter-btn-active' : ''}`}
-                            style={{ fontSize: '10px' }}
-                        >
-                            {s === 'all' ? 'All Status' : s}
-                        </Button>
-                    ))}
+                <div className="filter-grid-col filter-grid-status">
+                    <div className="d-flex gap-2">
+                        <ToggleChip label="Watched" active={statusToggle.WATCHED} onClick={() => toggleStatus('WATCHED')} />
+                        <ToggleChip label="Watching" active={statusToggle.WATCHING} onClick={() => toggleStatus('WATCHING')} />
+                    </div>
+                    <div className="d-flex gap-2">
+                        <ToggleChip label="Will Watch" active={statusToggle['WILL WATCH']} onClick={() => toggleStatus('WILL WATCH')} />
+                        <ToggleChip label="On Hold" active={statusToggle['ON HOLD']} onClick={() => toggleStatus('ON HOLD')} />
+                    </div>
                 </div>
             </div>
 
@@ -306,7 +331,7 @@ export default function Analytics() {
                     </Section>
 
                     {/* Completion Metrics */}
-                    {filter !== 'movies' && (
+                    {showTvSections && (
                         <Section title="Series Completion" icon={ListChecks}>
                             <div className="card border-0 shadow-sm p-3 d-flex flex-row align-items-center gap-4">
                                 <ProgressRing percentage={completion.avgCompletionRate} />
@@ -351,7 +376,7 @@ export default function Analytics() {
                     )}
 
                     {/* Episode Progress */}
-                    {episodeProgress.length > 0 && filter !== 'movies' && (
+                    {episodeProgress.length > 0 && showTvSections && (
                         <Section title="Episode Progress" icon={TrendingUp}>
                             <div className="card border-0 shadow-sm p-3 d-flex flex-column gap-3">
                                 {episodeProgress.map(ep => (
@@ -392,7 +417,7 @@ export default function Analytics() {
                     {/* Top Lists */}
                     <Section title="Top Lists" icon={Trophy}>
                         <div className="d-flex flex-column gap-4">
-                            {filter !== 'tv' && (
+                            {showMovieSections && (
                                 <div>
                                     <h4 className="font-mono text-body fw-medium mb-2" style={{ fontSize: '12px' }}>Recent Movies</h4>
                                     <div className="card border-0 shadow-sm p-3">
@@ -400,7 +425,7 @@ export default function Analytics() {
                                     </div>
                                 </div>
                             )}
-                            {filter !== 'movies' && (
+                            {showTvSections && (
                                 <>
                                     <div>
                                         <h4 className="font-mono text-body fw-medium mb-2" style={{ fontSize: '12px' }}>Completed Series</h4>
@@ -420,7 +445,7 @@ export default function Analytics() {
                     </Section>
 
                     {/* Viewing Behavior */}
-                    {behavior.avgMoviesPerMonth > 0 && filter !== 'tv' && (
+                    {behavior.avgMoviesPerMonth > 0 && showMovieSections && (
                         <Section title="Viewing Behavior" icon={TrendingUp}>
                             <div className="card border-0 shadow-sm p-3 d-flex flex-row gap-4 flex-wrap">
                                 <div className="d-flex flex-column">
