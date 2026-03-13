@@ -553,12 +553,6 @@ export default function TV() {
                       </div>
                     </div>
 
-                    <div className="mt-4">
-                      <StatusDropdown status={selectedEpisode.status} statusColor={selectedEpisode.statusColor} onSelect={(s, c) => {
-                        handleEpisodeStatusChange(selectedShow.id, selectedSeason as number, selectedEpisode.id, s, c);
-                        setSelectedEpisode({ ...selectedEpisode, status: s, statusColor: c });
-                      }} />
-                    </div>
                   </div>
 
                   <div className="px-4 pb-4 d-flex flex-column gap-4">

@@ -26,12 +26,13 @@ export default function Layout() {
 
 		// Sync Android status bar with theme
 		if (Capacitor.isNativePlatform()) {
+			StatusBar.setOverlaysWebView({ overlay: true });
 			if (theme === 'dark') {
 				StatusBar.setStyle({ style: Style.Dark });
-				StatusBar.setBackgroundColor({ color: '#191919' });
+				StatusBar.setBackgroundColor({ color: '#00000000' }); // Transparent
 			} else {
 				StatusBar.setStyle({ style: Style.Light });
-				StatusBar.setBackgroundColor({ color: '#ffffff' });
+				StatusBar.setBackgroundColor({ color: '#00000000' }); // Transparent
 			}
 		}
 	}, [theme]);
@@ -45,7 +46,7 @@ export default function Layout() {
 
 	return (
 		<div className="d-flex flex-column min-vh-100">
-			<Navbar bg="body" className="border-bottom top-navbar" style={{ height: '45px', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1040 }}>
+			<Navbar bg="body" className="border-bottom top-navbar" style={{ height: 'calc(45px + env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1040 }}>
 				<Container fluid className="px-3">
 					<div className="d-flex align-items-center gap-2">
 						{/* Hamburger — desktop only */}
@@ -91,7 +92,7 @@ export default function Layout() {
 
 			{/* Offcanvas — desktop only */}
 			<Offcanvas show={show} onHide={handleClose} placement="start" className="border-end-0 m-3 rounded-4 shadow-lg custom-offcanvas" style={{ width: '260px', height: 'auto', maxHeight: 'calc(100dvh - 2rem)' }}>
-				<Offcanvas.Header className="pb-0 pt-3 px-3 align-items-start">
+				<Offcanvas.Header className="pb-0 px-3 align-items-start" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
 					<div>
 						<div className="text-secondary fw-bold text-uppercase mb-1 font-mono" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>Archive</div>
 						<Offcanvas.Title className="fw-medium font-mono fs-6 text-body">Screen Arxiv</Offcanvas.Title>
