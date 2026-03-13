@@ -255,7 +255,7 @@ export default function Analytics() {
                             variant="light"
                             size="sm"
                             onClick={() => setFilter(f)}
-                            className={`rounded font-mono px-3 py-1 border transition-all ${filter === f ? 'bg-primary bg-opacity-15 border-primary border-opacity-50 shadow-sm text-primary fw-medium' : 'bg-secondary bg-opacity-10 text-secondary border-transparent'}`}
+                            className={`rounded font-mono px-3 py-1 filter-btn ${filter === f ? 'filter-btn-active' : ''}`}
                             style={{ fontSize: '11px' }}
                         >
                             {f === 'all' ? 'All' : f === 'movies' ? 'Movies' : 'TV Series'}
@@ -263,13 +263,13 @@ export default function Analytics() {
                     ))}
                 </div>
                 <div className="d-flex gap-1">
-                    {(['all', 'WATCHED', 'WATCHING', 'WILL WATCH', 'ON HOLD'] as StatusFilter[]).map(s => (
+                    {(['WATCHED', 'WATCHING', 'WILL WATCH', 'ON HOLD'] as StatusFilter[]).map(s => (
                         <Button
                             key={s}
                             variant="light"
                             size="sm"
                             onClick={() => setStatusFilter(s)}
-                            className={`rounded font-mono px-2 py-1 border transition-all ${statusFilter === s ? 'bg-primary bg-opacity-15 border-primary border-opacity-50 shadow-sm text-primary fw-medium' : 'bg-secondary bg-opacity-10 text-secondary border-transparent'}`}
+                            className={`rounded font-mono px-2 py-1 filter-btn ${statusFilter === s ? 'filter-btn-active' : ''}`}
                             style={{ fontSize: '10px' }}
                         >
                             {s === 'all' ? 'All Status' : s}

@@ -117,17 +117,65 @@ h6,
 }
 
 [data-bs-theme="dark"] .btn-light:hover {
-  background-color: rgba(51, 126, 169, 0.15) !important;
-  color: var(--bs-primary) !important;
-  border-color: rgba(51, 126, 169, 0.3) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--base-text) !important;
 }
 
 .btn-light:active,
 .btn-light:focus,
 .btn-light:active:focus {
-  background-color: rgba(51, 126, 169, 0.1) !important;
-  box-shadow: 0 0 0 0.2rem rgba(51, 126, 169, 0.15) !important;
-  color: var(--bs-primary) !important;
+  background-color: inherit !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+/* ── Filter Buttons (Analytics) ── */
+.filter-btn {
+  background-color: var(--struct-hover) !important;
+  color: var(--base-text-secondary) !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  transition: background-color 0.2s ease, color 0.2s ease !important;
+}
+
+.filter-btn:hover {
+  background-color: rgba(55, 53, 47, 0.12) !important;
+  color: var(--base-text) !important;
+  box-shadow: none !important;
+}
+
+.filter-btn:focus,
+.filter-btn:active,
+.filter-btn:active:focus {
+  background-color: var(--struct-hover) !important;
+  color: var(--base-text-secondary) !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+[data-bs-theme="dark"] .filter-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.filter-btn-active,
+.filter-btn-active:hover,
+.filter-btn-active:focus,
+.filter-btn-active:active,
+.filter-btn-active:active:focus {
+  background-color: rgba(11, 110, 153, 0.15) !important;
+  color: var(--accent-blue) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  font-weight: 500;
+}
+
+[data-bs-theme="dark"] .filter-btn-active,
+[data-bs-theme="dark"] .filter-btn-active:hover,
+[data-bs-theme="dark"] .filter-btn-active:focus,
+[data-bs-theme="dark"] .filter-btn-active:active,
+[data-bs-theme="dark"] .filter-btn-active:active:focus {
+  background-color: rgba(51, 126, 169, 0.2) !important;
+  color: #6bb8db !important;
 }
 
 [data-bs-theme="dark"] .btn-primary:hover {
