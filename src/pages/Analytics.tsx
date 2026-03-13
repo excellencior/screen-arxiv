@@ -233,11 +233,9 @@ export default function Analytics() {
     return (
         <Container className="py-3 px-4" style={{ maxWidth: '672px' }}>
             {/* Header */}
-            <div className="mb-4">
-                <h1 className="fs-3 fw-medium font-mono text-body tracking-tight mb-2">Analytics</h1>
-                <p className="text-secondary font-mono m-0" style={{ fontSize: '13px' }}>
-                    Reflect on your watch history
-                </p>
+            <div className="mb-4 d-flex flex-column flex-sm-row align-items-start align-items-sm-baseline gap-1 gap-sm-2">
+                <h1 className="fs-5 fw-bold font-mono text-body m-0">Analytics</h1>
+                <p className="text-secondary font-mono m-0" style={{ fontSize: '12px' }}>Reflect on your watch history.</p>
             </div>
 
             {/* Mindfulness Reminder */}

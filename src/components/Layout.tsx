@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Navbar, Container, Offcanvas, Nav, Button } from 'react-bootstrap';
-import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveDownload } from 'lucide-react';
+import { Navbar, Container, Offcanvas, Nav, Button, Dropdown } from 'react-bootstrap';
+import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveDownload, MoreHorizontal } from 'lucide-react';
+
+const NAV_ITEMS = [
+	{ path: '/', label: 'Analytics', icon: BarChart3 },
+	{ path: '/movies', label: 'Movies', icon: Film },
+	{ path: '/tv', label: 'Series', icon: Tv },
+	{ path: '/search', label: 'Search', icon: Search },
+];
+
+
 
 export default function Layout() {
 	const [show, setShow] = useState(false);
@@ -22,24 +31,48 @@ export default function Layout() {
 
 	return (
 		<div className="d-flex flex-column min-vh-100">
-			<Navbar bg="body" className="border-bottom sticky-top" style={{ height: '56px' }}>
+			<Navbar bg="body" className="border-bottom sticky-top" style={{ height: '45px' }}>
 				<Container fluid className="px-3">
-					<div className="d-flex align-items-center gap-3">
-						<Button variant="link" className="p-0 text-body" onClick={handleShow}>
-							<Menu size={20} />
+					<div className="d-flex align-items-center gap-2">
+						{/* Hamburger — desktop only */}
+						<Button variant="link" className="p-0 text-body d-none d-md-flex" onClick={handleShow}>
+							<Menu size={18} strokeWidth={1.75} />
 						</Button>
-						<Navbar.Brand className="m-0 p-0 fw-medium fs-6 font-mono tracking-tight">
+						<Navbar.Brand className="m-0 p-0 fw-medium font-mono tracking-tight" style={{ fontSize: '14px' }}>
 							Screen Arxiv
 						</Navbar.Brand>
 					</div>
-					<div className="d-flex align-items-center">
-						<Button variant="outline-secondary" className="rounded p-1 d-flex align-items-center justify-content-center border-0 bg-primary bg-opacity-10 text-primary" style={{ width: '32px', height: '32px' }}>
-							<Clapperboard size={16} />
+					<div className="d-flex align-items-center gap-1">
+						{/* Dropdown Menu — mobile top bar */}
+						<Dropdown align="end" className="d-flex d-md-none">
+							<Dropdown.Toggle
+								variant="link"
+								className="p-0 text-body d-flex align-items-center justify-content-center top-bar-icon border-0"
+								style={{ width: '28px', height: '28px' }}
+							>
+								<MoreHorizontal size={16} strokeWidth={1.75} />
+							</Dropdown.Toggle>
+
+							<Dropdown.Menu className="shadow-sm border-0 custom-dropdown-menu" style={{ minWidth: '160px', borderRadius: '8px', margin: '8px 0 0 0' }}>
+								<Dropdown.Item onClick={toggleTheme} className="d-flex align-items-center gap-2 py-2 px-3">
+									<Palette size={14} className={theme === 'dark' ? 'text-secondary' : 'text-body'} />
+									<span className="font-mono text-body" style={{ fontSize: '11px' }}>Toggle Theme</span>
+								</Dropdown.Item>
+								<Dropdown.Item as={Link} to="/save-data" className="d-flex align-items-center gap-2 py-2 px-3">
+									<HardDriveDownload size={14} className={location.pathname === '/save-data' ? 'text-primary' : 'text-body'} />
+									<span className="font-mono text-body" style={{ fontSize: '11px' }}>Save Data</span>
+								</Dropdown.Item>
+							</Dropdown.Menu>
+						</Dropdown>
+						{/* Desktop clapperboard icon */}
+						<Button variant="outline-secondary" className="rounded p-1 d-none d-md-flex align-items-center justify-content-center border-0 bg-primary bg-opacity-10 text-primary" style={{ width: '28px', height: '28px' }}>
+							<Clapperboard size={14} strokeWidth={1.75} />
 						</Button>
 					</div>
 				</Container>
 			</Navbar>
 
+			{/* Offcanvas — desktop only */}
 			<Offcanvas show={show} onHide={handleClose} placement="start" className="border-end-0 m-3 rounded-4 shadow-lg custom-offcanvas" style={{ width: '260px', height: 'auto', maxHeight: 'calc(100dvh - 2rem)' }}>
 				<Offcanvas.Header className="pb-0 pt-3 px-3 align-items-start">
 					<div>
@@ -94,6 +127,23 @@ export default function Layout() {
 			<main className={`flex-grow-1 app-content ${show ? 'blur-active' : ''}`}>
 				<Outlet />
 			</main>
+
+			{/* Bottom bar — mobile only */}
+			<nav className="bottom-nav d-flex d-md-none">
+				{NAV_ITEMS.map(({ path, label, icon: Icon }) => {
+					const isActive = location.pathname === path;
+					return (
+						<Link
+							key={path}
+							to={path}
+							className={`bottom-nav-item ${isActive ? 'active' : ''}`}
+						>
+							<Icon size={18} strokeWidth={isActive ? 2 : 1.5} />
+							<span className="bottom-nav-label">{label}</span>
+						</Link>
+					);
+				})}
+			</nav>
 		</div>
 	);
 }

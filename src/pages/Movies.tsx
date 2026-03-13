@@ -80,10 +80,10 @@ export default function Movies() {
   return (
     <Container className="py-3 px-4" style={{ maxWidth: '672px' }}>
 
-      <div className="mb-3 d-flex align-items-center justify-content-between">
-        <div>
-          <h1 className="fs-3 fw-medium font-mono text-body tracking-tight mb-2">Movies</h1>
-          <p className="text-secondary font-mono m-0" style={{ fontSize: '13px' }}>
+      <div className="mb-4 d-flex align-items-start justify-content-between">
+        <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-baseline gap-1 gap-sm-2">
+          <h1 className="fs-5 fw-bold font-mono text-body m-0">Movies</h1>
+          <p className="text-secondary font-mono m-0" style={{ fontSize: '12px' }}>
             {displayedMovies.length !== movies.length
               ? `${displayedMovies.length} of ${movies.length} entries`
               : `${movies.length} entries`}
