@@ -14,6 +14,12 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# Ensure Java 11+ is used if available (required by newer Gradle plugin versions)
+if [ -d "/usr/local/jdk21" ]; then
+    export JAVA_HOME="/usr/local/jdk21"
+    export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
 echo -e "${GREEN}Starting APK build, signing, and export process...${NC}\n"
 
 # 1. Build the Release APK (assembleRelease builds .apk, bundleRelease builds .aab)
