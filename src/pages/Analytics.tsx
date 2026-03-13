@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Container } from 'react-bootstrap';
 import {
     BarChart3, Film, Tv, Clock, TrendingUp, Layers,
-    ListChecks, Trophy, CalendarDays, Clapperboard, Lightbulb
+    Trophy, CalendarDays, Clapperboard, Lightbulb
 } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
 import { getDailyQuote } from '../data/quotes';
@@ -247,7 +247,6 @@ export default function Analytics() {
 
     // Compute all stats
     const overview = useMemo(() => computeOverviewStats(filteredMovies, filteredShows), [filteredMovies, filteredShows]);
-    const completion = useMemo(() => computeCompletionMetrics(filteredShows), [filteredShows]);
     const episodeProgress = useMemo(() => computeEpisodeProgress(filteredShows), [filteredShows]);
     const decades = useMemo(() => computeReleaseYearDistribution(filteredMovies, filteredShows), [filteredMovies, filteredShows]);
     const genres = useMemo(() => computeGenreDistribution(filteredMovies, filteredShows, genreMap), [filteredMovies, filteredShows, genreMap]);
@@ -266,7 +265,7 @@ export default function Analytics() {
     const showTvSections = typeToggle.tv;
 
     return (
-        <Container className="py-3 px-4" style={{ maxWidth: '672px' }}>
+        <Container className="py-3 px-3 px-md-4" style={{ maxWidth: '672px' }}>
             {/* Header */}
             <div className="mb-4 d-flex flex-column flex-sm-row align-items-start align-items-sm-baseline gap-1 gap-sm-2">
                 <h1 className="fs-5 fw-bold font-mono text-body m-0">Analytics</h1>
@@ -330,32 +329,6 @@ export default function Analytics() {
                         </div>
                     </Section>
 
-                    {/* Completion Metrics */}
-                    {showTvSections && (
-                        <Section title="Series Completion" icon={ListChecks}>
-                            <div className="card border-0 shadow-sm p-3 d-flex flex-row align-items-center gap-4">
-                                <ProgressRing percentage={completion.avgCompletionRate} />
-                                <div className="d-flex flex-column gap-1 flex-grow-1">
-                                    <div className="d-flex justify-content-between font-mono" style={{ fontSize: '12px' }}>
-                                        <span className="text-secondary">Completed</span>
-                                        <span className="text-body fw-medium">{completion.completedSeries}</span>
-                                    </div>
-                                    <div className="d-flex justify-content-between font-mono" style={{ fontSize: '12px' }}>
-                                        <span className="text-secondary">In Progress</span>
-                                        <span className="text-body fw-medium">{completion.inProgressSeries}</span>
-                                    </div>
-                                    <div className="d-flex justify-content-between font-mono" style={{ fontSize: '12px' }}>
-                                        <span className="text-secondary">On Hold</span>
-                                        <span className="text-body fw-medium">{completion.onHoldSeries}</span>
-                                    </div>
-                                    <div className="d-flex justify-content-between font-mono" style={{ fontSize: '12px' }}>
-                                        <span className="text-secondary">Planned</span>
-                                        <span className="text-body fw-medium">{completion.willWatchSeries}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </Section>
-                    )}
 
                     {/* Release Year Distribution */}
                     {decades.length > 0 && (

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Container, Button, Modal } from 'react-bootstrap';
-import { Check, X, Plus, Play, Trash2, CheckSquare } from 'lucide-react';
+import { Check, X, Plus, Play, Trash2, CheckSquare, Clock } from 'lucide-react';
 import { fetchTVDetails, fetchTVSeason } from '../services/tmdb';
 import { useLibrary } from '../context/LibraryContext';
 import { Link } from 'react-router-dom';
@@ -221,33 +221,30 @@ export default function TV() {
               exit={{ opacity: 0, y: 30 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 12 }}>
+              <div className="position-absolute top-0 start-0 end-0 p-3 d-flex justify-content-between align-items-center" style={{ zIndex: 12 }}>
+                {selectedSeason !== null ? (
+                  <button
+                    onClick={() => setSelectedSeason(null)}
+                    className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                    style={{ width: '30px', height: '30px', cursor: 'pointer' }}
+                    title="Back to seasons"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                  </button>
+                ) : <div />}
                 <button
                   onClick={() => setSelectedShow(null)}
-                  className="border-0 bg-secondary bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
-                  style={{ width: '30px', height: '30px', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+                  className="border-0 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                  style={{ width: '30px', height: '30px', cursor: 'pointer', backdropFilter: 'blur(4px)', backgroundColor: 'rgba(220,53,69,0.12)' }}
                 >
-                  <X size={16} className="text-body" />
+                  <X size={16} className="text-danger" />
                 </button>
               </div>
               <div className="scrollbar-hide" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
                 <Modal.Body className="p-0">
                   {/* ── Header ── */}
                   <div className="p-4 pb-3">
-                    <div className="d-flex gap-3 align-items-start">
-                      {/* Back button */}
-                      <div className="flex-shrink-0 d-flex flex-column align-items-center gap-2" style={{ paddingTop: '2px' }}>
-                        {selectedSeason !== null && (
-                          <button
-                            onClick={() => setSelectedSeason(null)}
-                            className="border-0 bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                            style={{ width: '30px', height: '30px', cursor: 'pointer' }}
-                            title="Back to seasons"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                          </button>
-                        )}
-                      </div>
+                    <div className="d-flex gap-3 align-items-start" style={{ paddingTop: selectedSeason !== null ? '36px' : '0' }}>
 
                       {/* Poster */}
                       {(() => {
@@ -270,24 +267,68 @@ export default function TV() {
                             (() => {
                               const eps = activeSeason?.episodes || [];
                               const watched = eps.filter((e: any) => e.status === 'WATCHED').length;
-                              return eps.length > 0
-                                ? <><span>{eps.length} Episodes</span><span className="opacity-50">•</span><span className="text-success fw-bold">{watched}/{eps.length} watched</span></>
-                                : <span>{activeSeason?.episode_count || 0} Episodes</span>;
+                              const watchTime = eps.reduce((acc: number, ep: any) => acc + (ep.runtime || selectedShow.episode_runtime || 0), 0) || ((activeSeason?.episode_count || 0) * (selectedShow.episode_runtime || 0));
+                              const hours = Math.floor(watchTime / 60);
+                              const mins = watchTime % 60;
+                              const timeStr = watchTime > 0 ? `${hours > 0 ? hours + 'h ' : ''}${mins}m` : null;
+
+                              return (
+                                <div className="d-flex flex-column gap-1">
+                                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                                    {eps.length > 0
+                                      ? <><span>{eps.length} Episodes</span><span className="opacity-50">•</span><span className="text-success fw-bold">{watched}/{eps.length} watched</span></>
+                                      : <span>{activeSeason?.episode_count || 0} Episodes</span>}
+                                  </div>
+                                  {timeStr && (
+                                    <div className="d-flex align-items-center gap-1 opacity-75 mt-1" style={{ fontSize: '11px' }}>
+                                      <Clock size={12} />
+                                      <span>{timeStr}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
                             })()
                           ) : (
                             <>
                               <span>{selectedShow.year}</span>
                               <span className="opacity-50">•</span>
                               <span>{selectedShow.seasons?.length || 0} Seasons</span>
-                              <span className="opacity-50">•</span>
-                              <span>
-                                <span className="text-success fw-bold">{selectedShow.progress?.watched || 0}</span>
-                                <span className="opacity-50">/{selectedShow.total_episodes || 0}</span>
-                                <span className="ms-1">watched</span>
-                              </span>
                             </>
                           )}
                         </div>
+
+                        {/* Episode progress — separate line with consistent spacing */}
+                        {selectedSeason === null && selectedShow.progress && (
+                          <div className="font-mono text-secondary mt-1" style={{ fontSize: '11px' }}>
+                            {selectedShow.total_episodes || 0} episodes
+                          </div>
+                        )}
+
+                        {/* Per-series episode analytics button */}
+                        {selectedSeason === null && selectedShow.progress && (() => {
+                          const watched = selectedShow.progress?.watched ?? 0;
+                          const total = selectedShow.progress?.total ?? (selectedShow.total_episodes ?? 0);
+                          const remaining = Math.max(0, total - watched);
+                          const pct = total > 0 ? Math.round((watched / total) * 100) : 0;
+                          return (
+                            <div className="mt-2">
+                              <div style={{ height: '5px', backgroundColor: 'var(--struct-hover)', borderRadius: '3px', overflow: 'hidden', marginBottom: '6px' }}>
+                                <div style={{
+                                  width: `${pct}%`,
+                                  height: '100%',
+                                  backgroundColor: pct === 100 ? '#198754' : 'var(--accent-blue)',
+                                  borderRadius: '3px',
+                                  transition: 'width 0.5s ease',
+                                }} />
+                              </div>
+                              <div className="d-flex gap-3 font-mono" style={{ fontSize: '10px' }}>
+                                <span className="text-success fw-bold">{watched} watched</span>
+                                <span className="text-secondary">{remaining} left</span>
+                                <span className="text-secondary opacity-75">{pct}%</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* Cast Section in Show Modal */}
                         {selectedSeason === null && selectedShow.cast?.length > 0 && (

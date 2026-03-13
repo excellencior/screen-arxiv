@@ -45,7 +45,7 @@ export default function Layout() {
 
 	return (
 		<div className="d-flex flex-column min-vh-100">
-			<Navbar bg="body" className="border-bottom sticky-top" style={{ height: '45px' }}>
+			<Navbar bg="body" className="border-bottom top-navbar" style={{ height: '45px', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1040 }}>
 				<Container fluid className="px-3">
 					<div className="d-flex align-items-center gap-2">
 						{/* Hamburger — desktop only */}
@@ -86,6 +86,8 @@ export default function Layout() {
 					</div>
 				</Container>
 			</Navbar>
+			{/* Spacer for fixed navbar */}
+			<div style={{ height: '45px', flexShrink: 0 }} />
 
 			{/* Offcanvas — desktop only */}
 			<Offcanvas show={show} onHide={handleClose} placement="start" className="border-end-0 m-3 rounded-4 shadow-lg custom-offcanvas" style={{ width: '260px', height: 'auto', maxHeight: 'calc(100dvh - 2rem)' }}>

@@ -163,14 +163,14 @@ export default function Movies() {
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 12 }}>
-              <button
-                onClick={() => setSelectedMovie(null)}
-                className="border-0 bg-secondary bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
-                style={{ width: '30px', height: '30px', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
-              >
-                <X size={16} className="text-body" />
-              </button>
-            </div>
+                <button
+                  onClick={() => setSelectedMovie(null)}
+                  className="border-0 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                  style={{ width: '30px', height: '30px', cursor: 'pointer', backdropFilter: 'blur(4px)', backgroundColor: 'rgba(220,53,69,0.12)' }}
+                >
+                  <X size={16} className="text-danger" />
+                </button>
+              </div>
             
             <div className="scrollbar-hide" style={{ maxHeight: '85vh', overflowY: 'auto' }}>
             
