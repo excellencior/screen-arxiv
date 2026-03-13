@@ -222,6 +222,7 @@ export default function TV() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 30 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              style={{ filter: selectedEpisode ? 'blur(4px)' : 'none', transition: 'filter 0.3s ease', pointerEvents: selectedEpisode ? 'none' : 'auto' }}
             >
               <div className="position-absolute top-0 start-0 end-0 p-3 d-flex justify-content-between align-items-center" style={{ zIndex: 12 }}>
                 {selectedSeason !== null ? (
@@ -243,7 +244,7 @@ export default function TV() {
                 </button>
               </div>
               <div className="scrollbar-hide" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-                <Modal.Body className="p-0" style={{ filter: selectedEpisode ? 'blur(4px)' : 'none', transition: 'filter 0.3s ease', pointerEvents: selectedEpisode ? 'none' : 'auto' }}>
+                <Modal.Body className="p-0">
                   {/* ── Header ── */}
                   <div className="p-4 pb-3">
                     <div className="d-flex gap-3 align-items-start" style={{ paddingTop: selectedSeason !== null ? '36px' : '0' }}>
