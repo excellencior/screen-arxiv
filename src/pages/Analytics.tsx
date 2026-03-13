@@ -17,17 +17,7 @@ import {
     computeViewingBehavior,
 } from '../services/analytics';
 
-type FilterType = 'all' | 'movies' | 'tv';
-type StatusFilter = 'all' | 'WATCHED' | 'WATCHING' | 'WILL WATCH' | 'ON HOLD';
-
-const STATUS_COLOR_MAP: Record<string, string> = {
-    'WATCHED': '#198754',
-    'DONE': '#198754',
-    'WATCHING': '#0d6efd',
-    'WILL WATCH': '#ffc107',
-    'ON HOLD': '#dc3545',
-    'UNKNOWN': '#6c757d',
-};
+import { FilterType, StatusFilter, STATUS_COLOR_MAP } from '../types';
 
 // ─── Stat Card ──────────────────────────────────────────────
 
@@ -192,9 +182,14 @@ function TopList({ items, emptyMsg }: { items: { id: number; title: string; deta
 // ═══════════════════════════════════════════════════════════════
 
 export default function Analytics() {
-    const { movies, shows } = useLibrary();
-    const [filter, setFilter] = useState<FilterType>('all');
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+    const { 
+        movies, 
+        shows, 
+        analyticsFilter: filter, 
+        setAnalyticsFilter: setFilter, 
+        analyticsStatusFilter: statusFilter, 
+        setAnalyticsStatusFilter: setStatusFilter 
+    } = useLibrary();
     const [genreMap, setGenreMap] = useState<Map<number, string>>(new Map());
 
     useEffect(() => {
@@ -260,7 +255,7 @@ export default function Analytics() {
                             variant="light"
                             size="sm"
                             onClick={() => setFilter(f)}
-                            className={`rounded font-mono px-3 py-1 border ${filter === f ? 'bg-body border-secondary border-opacity-25 shadow-sm text-body fw-medium' : 'bg-secondary bg-opacity-10 text-secondary border-transparent'}`}
+                            className={`rounded font-mono px-3 py-1 border transition-all ${filter === f ? 'bg-primary bg-opacity-15 border-primary border-opacity-50 shadow-sm text-primary fw-medium' : 'bg-secondary bg-opacity-10 text-secondary border-transparent'}`}
                             style={{ fontSize: '11px' }}
                         >
                             {f === 'all' ? 'All' : f === 'movies' ? 'Movies' : 'TV Series'}
@@ -274,7 +269,7 @@ export default function Analytics() {
                             variant="light"
                             size="sm"
                             onClick={() => setStatusFilter(s)}
-                            className={`rounded font-mono px-2 py-1 border ${statusFilter === s ? 'bg-body border-secondary border-opacity-25 shadow-sm text-body fw-medium' : 'bg-secondary bg-opacity-10 text-secondary border-transparent'}`}
+                            className={`rounded font-mono px-2 py-1 border transition-all ${statusFilter === s ? 'bg-primary bg-opacity-15 border-primary border-opacity-50 shadow-sm text-primary fw-medium' : 'bg-secondary bg-opacity-10 text-secondary border-transparent'}`}
                             style={{ fontSize: '10px' }}
                         >
                             {s === 'all' ? 'All Status' : s}

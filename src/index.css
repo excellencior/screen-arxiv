@@ -117,16 +117,17 @@ h6,
 }
 
 [data-bs-theme="dark"] .btn-light:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  color: var(--base-text) !important;
+  background-color: rgba(51, 126, 169, 0.15) !important;
+  color: var(--bs-primary) !important;
+  border-color: rgba(51, 126, 169, 0.3) !important;
 }
 
 .btn-light:active,
 .btn-light:focus,
 .btn-light:active:focus {
-  background-color: inherit !important;
-  box-shadow: none !important;
-  color: inherit !important;
+  background-color: rgba(51, 126, 169, 0.1) !important;
+  box-shadow: 0 0 0 0.2rem rgba(51, 126, 169, 0.15) !important;
+  color: var(--bs-primary) !important;
 }
 
 [data-bs-theme="dark"] .btn-primary:hover {
