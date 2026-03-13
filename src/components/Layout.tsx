@@ -38,7 +38,8 @@ export default function Layout() {
 						<Button variant="link" className="p-0 text-body d-none d-md-flex" onClick={handleShow}>
 							<Menu size={18} strokeWidth={1.75} />
 						</Button>
-						<Navbar.Brand className="m-0 p-0 fw-medium font-mono tracking-tight" style={{ fontSize: '14px' }}>
+						<Navbar.Brand className="m-0 p-0 fw-medium font-mono tracking-tight d-flex align-items-center gap-2" style={{ fontSize: '14px' }}>
+							<img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="Logo" style={{ width: '16px', height: '16px' }} />
 							Screen Arxiv
 						</Navbar.Brand>
 					</div>
