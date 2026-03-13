@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar, Container, Offcanvas, Nav, Button, Dropdown } from 'react-bootstrap';
 import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveDownload, MoreHorizontal } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 const NAV_ITEMS = [
 	{ path: '/', label: 'Analytics', icon: BarChart3 },
@@ -21,6 +23,17 @@ export default function Layout() {
 	useEffect(() => {
 		document.documentElement.setAttribute('data-bs-theme', theme);
 		localStorage.setItem('screen-arxiv-theme', theme);
+
+		// Sync Android status bar with theme
+		if (Capacitor.isNativePlatform()) {
+			if (theme === 'dark') {
+				StatusBar.setStyle({ style: Style.Dark });
+				StatusBar.setBackgroundColor({ color: '#191919' });
+			} else {
+				StatusBar.setStyle({ style: Style.Light });
+				StatusBar.setBackgroundColor({ color: '#ffffff' });
+			}
+		}
 	}, [theme]);
 
 	const handleClose = () => setShow(false);
