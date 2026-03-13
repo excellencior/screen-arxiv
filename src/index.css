@@ -469,6 +469,12 @@ body.modal-open .min-vh-100 {
   background: #1e1e1e;
 }
 
+.episode-modal-backdrop {
+  -webkit-backdrop-filter: blur(4px) !important;
+  backdrop-filter: blur(4px) !important;
+  background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
 .bottom-nav-item {
   display: flex;
   flex-direction: column;

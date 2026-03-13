@@ -57,7 +57,9 @@ export default function TV() {
       const formattedEps = seasonData.episodes.map((ep: any) => ({
         id: ep.id, title: ep.name,
         date: ep.air_date ? new Date(ep.air_date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'TBA',
-        runtime: ep.runtime || 0, status: 'WILL WATCH', statusColor: 'warning',
+        runtime: ep.runtime || 0,
+        status: selectedShow.status === 'WATCHED' ? 'WATCHED' : 'WILL WATCH',
+        statusColor: selectedShow.status === 'WATCHED' ? 'success' : 'warning',
         summary: ep.overview,
         cast: ep.guest_stars?.map((g: any) => ({ name: g.name, role: g.character })) || []
       }));
@@ -241,7 +243,7 @@ export default function TV() {
                 </button>
               </div>
               <div className="scrollbar-hide" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-                <Modal.Body className="p-0">
+                <Modal.Body className="p-0" style={{ filter: selectedEpisode ? 'blur(4px)' : 'none', transition: 'filter 0.3s ease', pointerEvents: selectedEpisode ? 'none' : 'auto' }}>
                   {/* ── Header ── */}
                   <div className="p-4 pb-3">
                     <div className="d-flex gap-3 align-items-start" style={{ paddingTop: selectedSeason !== null ? '36px' : '0' }}>
@@ -455,7 +457,14 @@ export default function TV() {
                                   <div className="d-flex align-items-center gap-2">
                                     <span className="text-secondary font-mono" style={{ fontSize: '11px' }}>{season.episode_count} Eps</span>
                                     {season.air_date && (<><span className="text-secondary opacity-50" style={{ fontSize: '10px' }}>•</span><span className="text-secondary font-mono" style={{ fontSize: '11px' }}>{season.air_date.split('-')[0]}</span></>)}
-                                    {eps.length > 0 && (<><span className="text-secondary opacity-50" style={{ fontSize: '10px' }}>•</span><span className="text-success fw-bold font-mono" style={{ fontSize: '11px' }}>{watched}/{eps.length}</span></>)}
+                                    {(eps.length > 0 || selectedShow.status === 'WATCHED') && (
+                                      <>
+                                        <span className="text-secondary opacity-50" style={{ fontSize: '10px' }}>•</span>
+                                        <span className="text-success fw-bold font-mono" style={{ fontSize: '11px' }}>
+                                          {eps.length > 0 ? watched : season.episode_count}/{eps.length > 0 ? eps.length : season.episode_count}
+                                        </span>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="flex-shrink-0 text-secondary opacity-50">
@@ -502,7 +511,7 @@ export default function TV() {
       </Modal>
 
       {/* ── Episode detail modal ── */}
-      <Modal show={!!selectedEpisode} onHide={() => setSelectedEpisode(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden" animation={false}>
+      <Modal show={!!selectedEpisode} onHide={() => setSelectedEpisode(null)} centered contentClassName="border-0 shadow-lg rounded-4 overflow-hidden" animation={false} backdropClassName="episode-modal-backdrop">
         <AnimatePresence>
           {selectedEpisode && (
             <motion.div
@@ -514,10 +523,10 @@ export default function TV() {
               <div className="position-absolute top-0 end-0 p-3" style={{ zIndex: 12 }}>
                 <button
                   onClick={() => setSelectedEpisode(null)}
-                  className="border-0 bg-secondary bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
-                  style={{ width: '30px', height: '30px', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+                  className="border-0 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                  style={{ width: '30px', height: '30px', cursor: 'pointer', backdropFilter: 'blur(4px)', backgroundColor: 'rgba(220,53,69,0.12)' }}
                 >
-                  <X size={16} className="text-body" />
+                  <X size={16} className="text-danger" />
                 </button>
               </div>
               <div className="scrollbar-hide" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
