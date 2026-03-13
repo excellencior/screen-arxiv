@@ -20,10 +20,30 @@ if [ -d "/usr/local/jdk21" ]; then
     export PATH="$JAVA_HOME/bin:$PATH"
 fi
 
-echo -e "${GREEN}Starting APK build, signing, and export process...${NC}\n"
+echo -e "${GREEN}Starting build, sync, and APK export process...${NC}\n"
 
-# 1. Build the Release APK (assembleRelease builds .apk, bundleRelease builds .aab)
-echo "Building release APK using Gradle..."
+# 1. Build the Web app
+echo "Building the web application..."
+npm run build
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Error: Web build failed. Aborting.${NC}"
+    exit 1
+fi
+
+# 2. Sync to Capacitor
+echo -e "\nSyncing build to Capacitor Android..."
+cd mobile || exit
+npx cap sync android
+cd "$PROJECT_ROOT" || exit
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Error: Capacitor sync failed. Aborting.${NC}"
+    exit 1
+fi
+
+# 3. Build the Release APK (assembleRelease builds .apk, bundleRelease builds .aab)
+echo -e "\nBuilding release APK using Gradle..."
 cd "$ANDROID_PROJECT" || exit
 ./gradlew assembleRelease
 cd "$PROJECT_ROOT" || exit

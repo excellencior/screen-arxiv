@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
   return {
-    base: '/screen-arxiv/',
+    base: './',
 
     plugins: [react(), tailwindcss()],
 

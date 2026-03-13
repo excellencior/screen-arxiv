@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar, Container, Offcanvas, Nav, Button, Dropdown } from 'react-bootstrap';
 import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveDownload, MoreHorizontal } from 'lucide-react';
@@ -126,7 +127,14 @@ export default function Layout() {
 			</Offcanvas>
 
 			<main className={`flex-grow-1 app-content ${show ? 'blur-active' : ''}`}>
-				<Outlet />
+				<motion.div
+					key={location.pathname}
+					initial={{ opacity: 0, y: 15 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+				>
+					<Outlet />
+				</motion.div>
 			</main>
 
 			{/* Bottom bar — mobile only */}

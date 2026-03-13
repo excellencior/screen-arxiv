@@ -3,6 +3,9 @@ import { Container, Button, Card, Form, Spinner } from 'react-bootstrap';
 import { Download, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
 import * as fflate from 'fflate';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import toast from 'react-hot-toast';
 
 export default function SaveData() {
@@ -26,15 +29,38 @@ export default function SaveData() {
         });
       });
 
-      const blob = new Blob([zipped.buffer as ArrayBuffer], { type: 'application/zip' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `screen_arxiv_backup_${new Date().toISOString().split('T')[0]}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const fileName = `screen_arxiv_backup_${new Date().toISOString().split('T')[0]}.zip`;
+
+      if (Capacitor.isNativePlatform()) {
+        // Handle Mobile Export
+        const base64Data = btoa(
+          new Uint8Array(zipped).reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+
+        const savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache
+        });
+
+        await Share.share({
+          title: 'Export Screen Arxiv Library',
+          text: 'Here is your library backup.',
+          url: savedFile.uri,
+          dialogTitle: 'Save Backup'
+        });
+      } else {
+        // Handle Web Export
+        const blob = new Blob([zipped.buffer as ArrayBuffer], { type: 'application/zip' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
       
       toast.success('Backup exported successfully!', { icon: <CheckCircle2 size={16} className="text-success" /> });
     } catch (e) {

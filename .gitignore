@@ -6,3 +6,18 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Keystores (Security)
+*.keystore
+*.jks
+
+# Build artifacts
+apps/
+*.apk
+*.idsig
+
+# IDEs
+.idea/
+.vscode/
+.expo/
+
