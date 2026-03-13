@@ -5,6 +5,7 @@ import {
     ListChecks, Trophy, CalendarDays, Clapperboard, Lightbulb
 } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
+import { getDailyQuote } from '../data/quotes';
 import { fetchGenreMap } from '../services/tmdb';
 import {
     computeOverviewStats,
@@ -238,7 +239,7 @@ export default function Analytics() {
                 <Lightbulb className="text-primary mt-1 flex-shrink-0" size={16} />
                 <div className="d-flex flex-column gap-1">
                     <p className="m-0 text-primary-emphasis fw-medium font-mono" style={{ fontSize: '12px', lineHeight: '1.5' }}>
-                        Keep in mind that you need time for important things.
+                        {getDailyQuote()}
                     </p>
                     <p className="m-0 text-primary text-uppercase font-mono opacity-75" style={{ fontSize: '9px', letterSpacing: '0.05em' }}>
                         Mindfulness Reminder
