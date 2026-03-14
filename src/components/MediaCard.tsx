@@ -69,7 +69,7 @@ export function StatusDropdown({ status, statusColor, onSelect }: {
                     display: 'inline-flex', alignItems: 'center', gap: '4px',
                     padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
                     fontSize: '11px', fontFamily: 'monospace',
-                    backgroundColor: 'rgba(108,117,125,0.15)', color: '#333',
+                    backgroundColor: 'rgba(101, 117, 133, 0.15)', color: 'var(--bs-body-color)',
                 }}>
                     <Plus size={14} /> Add
                 </button>
@@ -242,7 +242,7 @@ export default function MediaCard({
                                                         display: 'inline-flex', alignItems: 'center', gap: '4px',
                                                         padding: '4px 10px', borderRadius: '6px', border: 'none',
                                                         cursor: 'pointer', fontSize: '11px', fontFamily: 'monospace',
-                                                        backgroundColor: 'rgba(108,117,125,0.15)', color: '#333',
+                                                        backgroundColor: 'rgba(101, 117, 133, 0.15)', color: 'var(--bs-body-color)',
                                                     }}
                                                 >
                                                     <Plus size={14} /> Add
