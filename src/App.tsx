@@ -8,10 +8,21 @@ import Search from './pages/Search';
 import Analytics from './pages/Analytics';
 import SaveData from './pages/SaveData';
 import { LibraryProvider } from './context/LibraryContext';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast, useToasterStore } from 'react-hot-toast';
+import SwipeableToast from './components/SwipeableToast';
 
 function AnimatedApp() {
   const location = useLocation();
+  const { toasts } = useToasterStore();
+  const TOAST_LIMIT = 3;
+
+  // Limit number of active toasts to prevent screen crowding
+  React.useEffect(() => {
+    toasts
+      .filter((t) => t.visible)
+      .filter((_, i) => i >= TOAST_LIMIT)
+      .forEach((t) => toast.dismiss(t.id));
+  }, [toasts]);
   
   return (
     <AnimatePresence mode="wait">
@@ -34,11 +45,24 @@ export default function App() {
     <LibraryProvider>
       <Toaster
         position="bottom-center"
-        toastOptions={{
-          className: 'font-mono text-body bg-body border shadow-sm',
-          style: { fontSize: '13px', borderRadius: '12px', padding: '12px 20px' }
+        containerStyle={{
+          bottom: 70, // Avoid bottom navigation bar
+          left: 20,
+          right: 20,
         }}
-      />
+        toastOptions={{
+          className: 'font-mono text-body bg-body border shadow-lg',
+          style: { 
+            fontSize: '13px', 
+            borderRadius: '12px', 
+            padding: '10px 16px',
+            maxWidth: '100%',
+            width: 'fit-content'
+          }
+        }}
+      >
+        {(t) => <SwipeableToast t={t} />}
+      </Toaster>
       <HashRouter>
         <AnimatedApp />
       </HashRouter>
