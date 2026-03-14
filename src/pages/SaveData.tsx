@@ -33,25 +33,41 @@ export default function SaveData() {
 
       if (Capacitor.isNativePlatform()) {
         // Handle Mobile Export
-        const base64Data = btoa(
-          new Uint8Array(zipped).reduce((data, byte) => data + String.fromCharCode(byte), '')
-        );
+        // Use zipped directly as Blob supports Uint8Array. Buffer might be larger than needed.
+        const blob = new Blob([zipped], { type: 'application/zip' });
+        
+        // Convert Blob to Base64 safely using FileReader
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            const commaIndex = result.indexOf(',');
+            if (commaIndex !== -1) {
+              resolve(result.substring(commaIndex + 1));
+            } else {
+              reject(new Error('Failed to parse base64 data'));
+            }
+          };
+          reader.onerror = () => reject(new Error('FileReader error'));
+          reader.readAsDataURL(blob);
+        });
 
         const savedFile = await Filesystem.writeFile({
           path: fileName,
           data: base64Data,
-          directory: Directory.Cache
+          directory: Directory.Cache,
+          recursive: true
         });
 
         await Share.share({
-          title: 'Export Screen Arxiv Library',
-          text: 'Here is your library backup.',
-          url: savedFile.uri,
+          title: 'Library Backup',
+          text: 'Archive backup file',
+          files: [savedFile.uri],
           dialogTitle: 'Save Backup'
         });
       } else {
         // Handle Web Export
-        const blob = new Blob([zipped.buffer as ArrayBuffer], { type: 'application/zip' });
+        const blob = new Blob([zipped], { type: 'application/zip' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -62,10 +78,13 @@ export default function SaveData() {
         URL.revokeObjectURL(url);
       }
       
-      toast.success('Backup exported successfully!', { icon: <CheckCircle2 size={16} className="text-success" /> });
-    } catch (e) {
-      console.error(e);
-      toast.error('Failed to export backup', { icon: <AlertCircle size={16} className="text-danger" /> });
+      toast.success('Backup exported successfully!');
+    } catch (e: any) {
+      console.error('Export error:', e);
+      toast.error(`Export failed: ${e.message || 'Unknown error'}`, { 
+        icon: <AlertCircle size={16} className="text-danger" />,
+        duration: 5000 
+      });
     } finally {
       setIsExporting(false);
     }
