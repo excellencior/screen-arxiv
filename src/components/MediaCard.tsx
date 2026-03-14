@@ -1,4 +1,5 @@
 import { Badge } from 'react-bootstrap';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Plus, Minus, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
@@ -37,73 +38,143 @@ export function StatusDropdown({ status, statusColor, onSelect }: {
     onSelect: (label: string, color: string) => void;
 }) {
     const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, height: 0, placement: 'bottom' as 'top' | 'bottom' });
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!open) return;
         const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
         };
+
+        const handleScroll = (e: Event) => {
+            // Close if we scroll the main window or any scrollable container
+            setOpen(false);
+        };
+        
         document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        window.addEventListener('scroll', handleScroll, true);
+        return () => {
+            document.removeEventListener('mousedown', handler);
+            window.removeEventListener('scroll', handleScroll, true);
+        };
     }, [open]);
+
+    const handleToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (!open) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const dropdownHeight = 180; // Buffer for menu height
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const placement = spaceBelow < dropdownHeight ? 'top' : 'bottom';
+            
+            setCoords({ 
+                top: placement === 'bottom' ? rect.bottom : rect.top, 
+                left: rect.left, 
+                width: rect.width,
+                height: rect.height,
+                placement 
+            });
+        }
+        setOpen(!open);
+    };
 
     const color = statusColor ? COLOR_MAP[statusColor] ?? '#6c757d' : '#6c757d';
     const bgColor = statusColor ? COLOR_MAP[statusColor] + '33' : undefined;
 
     return (
-        <div ref={ref} style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'inline-block' }} onClick={(e) => e.stopPropagation()}>
             {status ? (
-                <button onClick={() => setOpen(o => !o)} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '5px',
-                    padding: '3px 8px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-                    fontSize: '11px', fontFamily: 'monospace', fontWeight: 600,
-                    backgroundColor: bgColor, color, whiteSpace: 'nowrap',
-                }}>
+                <button 
+                    onClick={handleToggle} 
+                    style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '5px',
+                        padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                        fontSize: '11px', fontFamily: '"PT Sans", sans-serif', fontWeight: 600,
+                        backgroundColor: bgColor, color, whiteSpace: 'nowrap',
+                        transition: 'opacity 0.15s ease',
+                    }}
+                >
                     <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
                     {status}
                     <ChevronDown size={10} style={{ opacity: 0.75 }} />
                 </button>
             ) : (
-                <button onClick={() => setOpen(o => !o)} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                    padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                    fontSize: '11px', fontFamily: 'monospace',
-                    backgroundColor: 'rgba(101, 117, 133, 0.15)', color: 'var(--bs-body-color)',
-                }}>
+                <button 
+                    onClick={handleToggle} 
+                    style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                        padding: '4px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                        fontSize: '11px', fontFamily: '"PT Sans", sans-serif',
+                        backgroundColor: 'var(--struct-hover)', color: 'var(--base-text)',
+                        fontWeight: 500,
+                    }}
+                >
                     <Plus size={14} /> Add
                 </button>
             )}
-            {open && (
-                <div style={{
-                    position: 'absolute', right: 0, top: 'calc(100% + 4px)', zIndex: 1050,
-                    backgroundColor: 'var(--bs-body-bg, #fff)', borderRadius: '8px',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.12)', minWidth: '140px',
-                    padding: '4px 0', overflow: 'hidden',
-                }}>
+            {open && createPortal(
+                <div 
+                    ref={dropdownRef}
+                    style={{
+                        position: 'fixed', 
+                        top: coords.placement === 'bottom' ? coords.top + 6 : undefined,
+                        bottom: coords.placement === 'top' ? (window.innerHeight - coords.top) + 6 : undefined,
+                        left: Math.max(8, Math.min(window.innerWidth - 158, coords.left + coords.width - 150)), 
+                        zIndex: 9999,
+                        backgroundColor: 'var(--base-surface)', 
+                        borderRadius: '10px',
+                        boxShadow: '0 12px 30px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08), 0 0 0 1px var(--struct-border)', 
+                        minWidth: '150px',
+                        padding: '6px', 
+                        overflow: 'hidden',
+                        animation: 'dropdownFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
+                    }}
+                >
+                    <style>
+                        {`
+                        @keyframes dropdownFadeIn {
+                            from { opacity: 0; transform: scale(0.95) translateY(${coords.placement === 'bottom' ? '-8px' : '8px'}); }
+                            to { opacity: 1; transform: scale(1) translateY(0); }
+                        }
+                        `}
+                    </style>
                     {STATUS_OPTIONS.map(option => {
                         const optColor = COLOR_MAP[option.color];
                         const isActive = status === option.label;
                         return (
                             <button key={option.label}
-                                onMouseDown={(e) => { e.stopPropagation(); onSelect(option.label, option.color); setOpen(false); }}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '8px',
-                                    width: '100%', padding: '6px 12px', border: 'none',
-                                    background: isActive ? 'rgba(0,0,0,0.06)' : 'transparent',
-                                    cursor: 'pointer', fontSize: '11px', fontFamily: 'monospace',
-                                    fontWeight: isActive ? 700 : 400,
-                                    color: 'var(--bs-body-color, #333)', textAlign: 'left',
+                                onMouseDown={(e) => { 
+                                    e.preventDefault();
+                                    e.stopPropagation(); 
+                                    onSelect(option.label, option.color); 
+                                    setOpen(false); 
                                 }}
-                                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)')}
-                                onMouseLeave={e => (e.currentTarget.style.backgroundColor = isActive ? 'rgba(0,0,0,0.06)' : 'transparent')}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '10px',
+                                    width: '100%', padding: '8px 12px', border: 'none',
+                                    borderRadius: '6px',
+                                    background: isActive ? 'var(--struct-hover)' : 'transparent',
+                                    cursor: 'pointer', fontSize: '12px', 
+                                    fontFamily: '"PT Sans", sans-serif',
+                                    fontWeight: isActive ? 600 : 400,
+                                    color: 'var(--base-text)', textAlign: 'left',
+                                    transition: 'background-color 0.15s ease',
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--struct-hover)')}
+                                onMouseLeave={e => (e.currentTarget.style.backgroundColor = isActive ? 'var(--struct-hover)' : 'transparent')}
                             >
                                 <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: optColor, flexShrink: 0 }} />
                                 {option.label}
                             </button>
                         );
                     })}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
