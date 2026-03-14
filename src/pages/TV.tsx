@@ -55,17 +55,27 @@ export default function TV() {
     const seasonData = await fetchTVSeason(selectedShow.id, seasonNumber);
     if (seasonData?.episodes) {
       const isSeasonWatched = existing?.status === 'WATCHED' || selectedShow.status === 'WATCHED';
-      const formattedEps = seasonData.episodes.map((ep: any) => ({
-        id: ep.id, title: ep.name,
-        date: ep.air_date ? new Date(ep.air_date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'TBA',
-        runtime: ep.runtime || 0,
-        status: isSeasonWatched ? 'WATCHED' : 'WILL WATCH',
-        statusColor: isSeasonWatched ? 'success' : 'warning',
-        summary: ep.overview,
-        cast: ep.guest_stars?.map((g: any) => ({ name: g.name, role: g.character })) || []
-      }));
+      const now = new Date();
+      const formattedEps = seasonData.episodes.map((ep: any) => {
+        const epDateStr = ep.air_date ? new Date(ep.air_date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'TBA';
+        const isReleased = ep.air_date ? new Date(ep.air_date) <= now : false;
+        const epStatus = (isSeasonWatched && isReleased) ? 'WATCHED' : 'WILL WATCH';
+        return {
+          id: ep.id, title: ep.name,
+          date: epDateStr,
+          runtime: ep.runtime || 0,
+          status: epStatus,
+          statusColor: epStatus === 'WATCHED' ? 'success' : 'warning',
+          summary: ep.overview,
+          cast: ep.guest_stars?.map((g: any) => ({ name: g.name, role: g.character })) || []
+        };
+      });
+      const allWatched = formattedEps.length > 0 && formattedEps.every((e: any) => e.status === 'WATCHED');
+      const hasWatched = formattedEps.some((e: any) => e.status === 'WATCHED');
+      const newSeasonStatus = allWatched ? 'WATCHED' : (hasWatched ? 'WATCHING' : 'WILL WATCH');
+      
       const updatedSeasons = selectedShow.seasons.map((s: any) =>
-        s.season_number === seasonNumber ? { ...s, episodes: formattedEps, status: isSeasonWatched ? 'WATCHED' : (s.status || 'WILL WATCH') } : s
+        s.season_number === seasonNumber ? { ...s, episodes: formattedEps, status: isSeasonWatched ? newSeasonStatus : (s.status || 'WILL WATCH') } : s
       );
       const total = selectedShow.total_episodes || updatedSeasons.reduce((acc: number, s: any) => acc + (s.episode_count || s.episodes?.length || 0), 0);
       const { status, statusColor, watchedCount } = deriveShowStatus(updatedSeasons, total);
@@ -106,13 +116,25 @@ export default function TV() {
 
   const handleMarkAllWatched = () => {
     if (!selectedShow || selectedSeason === null) return;
-    const updatedSeasons = selectedShow.seasons.map((s: any) =>
-      s.season_number === selectedSeason ? {
-        ...s,
-        status: 'WATCHED',
-        episodes: (s.episodes || []).map((ep: any) => ({ ...ep, status: 'WATCHED', statusColor: 'success' }))
-      } : s
-    );
+    const now = new Date();
+    const updatedSeasons = selectedShow.seasons.map((s: any) => {
+      if (s.season_number === selectedSeason) {
+        const updatedEps = (s.episodes || []).map((ep: any) => {
+          const isReleased = ep.date !== 'TBA' && new Date(ep.date) <= now;
+          if (isReleased) {
+            return { ...ep, status: 'WATCHED', statusColor: 'success' };
+          }
+          return ep;
+        });
+        const allWatched = updatedEps.length > 0 && updatedEps.every((e: any) => e.status === 'WATCHED');
+        return {
+          ...s,
+          status: allWatched ? 'WATCHED' : 'WATCHING',
+          episodes: updatedEps
+        };
+      }
+      return s;
+    });
     const total = selectedShow.total_episodes || updatedSeasons.reduce((acc: number, s: any) => acc + (s.episode_count || s.episodes?.length || 0), 0);
     const { status, statusColor, watchedCount } = deriveShowStatus(updatedSeasons, total);
     const updated = { ...selectedShow, seasons: updatedSeasons, progress: { watched: watchedCount, total }, status, statusColor };
@@ -122,13 +144,41 @@ export default function TV() {
 
   const handleMarkAllSeasonsWatched = () => {
     if (!selectedShow?.seasons) return;
-    const updatedSeasons = selectedShow.seasons.map((s: any) => ({
-      ...s,
-      status: 'WATCHED',
-      episodes: (s.episodes || []).map((ep: any) => ({ ...ep, status: 'WATCHED', statusColor: 'success' }))
-    }));
+    const now = new Date();
+    const updatedSeasons = selectedShow.seasons.map((s: any) => {
+      let updatedEps = s.episodes || [];
+      const hasEps = updatedEps.length > 0;
+
+      if (hasEps) {
+        updatedEps = updatedEps.map((ep: any) => {
+          const isReleased = ep.date !== 'TBA' && new Date(ep.date) <= now;
+          if (isReleased) {
+            return { ...ep, status: 'WATCHED', statusColor: 'success' };
+          }
+          return ep;
+        });
+        const allWatched = updatedEps.every((e: any) => e.status === 'WATCHED');
+        return {
+          ...s,
+          status: allWatched ? 'WATCHED' : 'WATCHING',
+          episodes: updatedEps
+        };
+      } else {
+        let seasonStatus = 'WATCHED';
+        if (s.air_date && new Date(s.air_date) > now) {
+          seasonStatus = 'WILL WATCH';
+        }
+        return {
+          ...s,
+          status: seasonStatus,
+          episodes: []
+        };
+      }
+    });
+
     const total = selectedShow.total_episodes || updatedSeasons.reduce((acc: number, s: any) => acc + (s.episode_count || s.episodes?.length || 0), 0);
-    const updated = { ...selectedShow, seasons: updatedSeasons, progress: { watched: total, total }, status: 'WATCHED', statusColor: 'success' };
+    const { status, statusColor, watchedCount } = deriveShowStatus(updatedSeasons, total);
+    const updated = { ...selectedShow, seasons: updatedSeasons, progress: { watched: watchedCount, total }, status, statusColor };
     setSelectedShow(updated);
     updateShow(selectedShow.id, updated);
   };
