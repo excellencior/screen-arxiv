@@ -5,6 +5,7 @@ import { Navbar, Container, Offcanvas, Nav, Button, Dropdown } from 'react-boots
 import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveDownload, MoreHorizontal } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { NavigationBar } from '@capgo/capacitor-navigation-bar';
 
 const NAV_ITEMS = [
 	{ path: '/', label: 'Analytics', icon: BarChart3 },
@@ -21,19 +22,29 @@ export default function Layout() {
 	const location = useLocation();
 
 	useEffect(() => {
+		if (Capacitor.isNativePlatform()) {
+			StatusBar.setOverlaysWebView({ overlay: true });
+		}
+	}, []);
+
+	useEffect(() => {
 		document.documentElement.setAttribute('data-bs-theme', theme);
 		localStorage.setItem('screen-arxiv-theme', theme);
 
-		// Sync Android status bar with theme
+		// Sync Android system bars with theme
 		if (Capacitor.isNativePlatform()) {
-			StatusBar.setOverlaysWebView({ overlay: true });
-			if (theme === 'dark') {
-				StatusBar.setStyle({ style: Style.Dark });
-				StatusBar.setBackgroundColor({ color: '#00000000' }); // Transparent
-			} else {
-				StatusBar.setStyle({ style: Style.Light });
-				StatusBar.setBackgroundColor({ color: '#00000000' }); // Transparent
-			}
+			const updateBars = async () => {
+				// Wait slightly for splash screen transition to complete
+				await new Promise(resolve => setTimeout(resolve, 200));
+				if (theme === 'dark') {
+					await StatusBar.setStyle({ style: Style.Dark });
+					await NavigationBar.setNavigationBarColor({ color: '#191919', darkButtons: false });
+				} else {
+					await StatusBar.setStyle({ style: Style.Light });
+					await NavigationBar.setNavigationBarColor({ color: '#f5f5f5', darkButtons: true });
+				}
+			};
+			updateBars();
 		}
 	}, [theme]);
 
