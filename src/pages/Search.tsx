@@ -234,7 +234,6 @@ export default function Search() {
             onChange={(e) => setQuery(e.target.value)}
             className="rounded-3 border font-mono ps-5 py-2 pe-5 bg-body text-body shadow-sm"
             style={{ fontSize: '14px' }}
-            autoFocus
           />
           {query && (
             <Button

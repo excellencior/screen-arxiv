@@ -56,7 +56,7 @@ export default function Layout() {
 	};
 
 	return (
-		<div className="d-flex flex-column min-vh-100">
+		<div className="d-flex flex-column h-100 overflow-hidden">
 			<Navbar bg="body" className="border-bottom top-navbar" style={{ height: 'calc(45px + env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1040 }}>
 				<Container fluid className="px-3">
 					<div className="d-flex align-items-center gap-2">
@@ -99,7 +99,7 @@ export default function Layout() {
 				</Container>
 			</Navbar>
 			{/* Spacer for fixed navbar */}
-			<div style={{ height: '45px', flexShrink: 0 }} />
+			<div style={{ height: 'calc(45px + env(safe-area-inset-top, 0px))', flexShrink: 0 }} />
 
 			{/* Offcanvas — desktop only */}
 			<Offcanvas show={show} onHide={handleClose} placement="start" className="border-end-0 m-3 rounded-4 shadow-lg custom-offcanvas" style={{ width: '260px', height: 'auto', maxHeight: 'calc(100dvh - 2rem)' }}>
@@ -153,7 +153,7 @@ export default function Layout() {
 				</Offcanvas.Body>
 			</Offcanvas>
 
-			<main className={`flex-grow-1 app-content ${show ? 'blur-active' : ''}`}>
+			<main className={`flex-grow-1 overflow-y-auto app-content ${show ? 'blur-active' : ''}`} style={{ minHeight: 0 }}>
 				<motion.div
 					key={location.pathname}
 					initial={{ opacity: 0, y: 15 }}

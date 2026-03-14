@@ -72,14 +72,20 @@
   --bs-border-color: var(--struct-border);
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+}
+
 body {
   font-family: "PT Sans", sans-serif;
   background-color: var(--base-bg);
   color: var(--base-text);
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-  /* Safe area insets for edge-to-edge Android displays */
-  padding-top: env(safe-area-inset-top, 0px);
+  overscroll-behavior-y: none;
 }
 
 h1,
