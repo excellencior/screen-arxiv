@@ -51,14 +51,7 @@ export default function App() {
           right: 20,
         }}
         toastOptions={{
-          className: 'font-mono text-body bg-body border shadow-lg',
-          style: { 
-            fontSize: '13px', 
-            borderRadius: '12px', 
-            padding: '10px 16px',
-            maxWidth: '100%',
-            width: 'fit-content'
-          }
+          className: 'font-mono'
         }}
       >
         {(t) => <SwipeableToast t={t} />}
