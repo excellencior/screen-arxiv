@@ -6,6 +6,7 @@ import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveD
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { NavigationBar } from '@capgo/capacitor-navigation-bar';
+import { useBackButton } from '../context/BackButtonContext';
 
 const NAV_ITEMS = [
 	{ path: '/', label: 'Analytics', icon: BarChart3 },
@@ -14,12 +15,16 @@ const NAV_ITEMS = [
 	{ path: '/search', label: 'Search', icon: Search },
 ];
 
-
-
 export default function Layout() {
 	const [show, setShow] = useState(false);
 	const [theme, setTheme] = useState(() => localStorage.getItem('screen-arxiv-theme') || 'light');
 	const location = useLocation();
+
+	// Handle back button for the sidebar offcanvas
+	useBackButton(() => {
+		setShow(false);
+		return true;
+	}, 15, show);
 
 	useEffect(() => {
 		if (Capacitor.isNativePlatform()) {
