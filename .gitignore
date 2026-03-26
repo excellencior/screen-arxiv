@@ -21,3 +21,5 @@ apps/
 .vscode/
 .expo/
 
+# misc.
+build-release.sh
