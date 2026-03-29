@@ -217,22 +217,19 @@ export default function MoviesScreen({ navigation }: any) {
       {/* Cinematic Detail Modal */}
       <Modal visible={!!selectedMovie} animationType="slide" presentationStyle="overFullScreen" transparent onRequestClose={() => setSelectedMovie(null)}>
         {selectedMovie && (
-          <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }}>
-            {/* The Backdrop Image is confined to the top half */}
-            <View style={{ height: Dimensions.get('window').height * 0.6, width: '100%', position: 'absolute', top: 0, backgroundColor: theme.colors.background }}>
+           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }}>
+            {/* The Backdrop Image - top half */}
+            <View style={{ height: Dimensions.get('window').height * 0.50, width: '100%', position: 'absolute', top: 0, backgroundColor: '#000000' }}>
                {selectedMovie.backdrop_path ? (
                   <Image source={{ uri: `https://image.tmdb.org/t/p/w1280${selectedMovie.backdrop_path}` }} style={{ width: '100%', height: '100%', opacity: 0.6 }} />
                ) : (
-                  <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                     <Image source={{ uri: selectedMovie.image }} style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0.4 }} blurRadius={20} />
-                     <Image source={{ uri: selectedMovie.image }} style={{ width: '100%', height: '100%', opacity: 0.8 }} resizeMode="contain" />
-                  </View>
+                  <Image source={{ uri: selectedMovie.image }} style={{ width: '100%', height: '100%', opacity: 0.4 }} blurRadius={10} />
                )}
-               {/* High-res gradient shim arrays to simulate smooth linear fade */}
+               {/* Gradient fade to theme background */}
                {Array.from({ length: 24 }).map((_, i) => (
                  <View 
                    key={`grad-${i}`} 
-                   style={{ position: 'absolute', bottom: (23 - i) * 4, left: 0, right: 0, height: 4.5, backgroundColor: isDarkMode ? `rgba(0,0,0,${(i / 23).toFixed(2)})` : `rgba(249, 249, 251, ${(i / 23).toFixed(2)})` }} 
+                   style={{ position: 'absolute', bottom: (23 - i) * 4, left: 0, right: 0, height: 4.5, backgroundColor: `rgba(0,0,0,${(i / 23).toFixed(2)})` }} 
                  />
                ))}
             </View>
@@ -258,19 +255,22 @@ export default function MoviesScreen({ navigation }: any) {
                })()}
               <View style={styles.modalFloatingHeader}>
                 <TouchableOpacity style={styles.closeBtn} onPress={() => { smoothLayoutAnimation(); setSelectedMovie(null); }}>
-                  <X size={24} color={theme.colors.text} />
+                  <X size={24} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
               
-              <View style={{ paddingTop: Dimensions.get('window').height * 0.45, paddingHorizontal: 24 }}>
-                 <Text style={styles.modalTitle} numberOfLines={3}>{selectedMovie.title}</Text>
+              {/* Title + Meta — positioned at bottom of dark backdrop area */}
+              <View style={{ paddingTop: Dimensions.get('window').height * 0.35, paddingHorizontal: 24, paddingBottom: 16 }}>
+                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+                   <Text style={styles.modalTitle} numberOfLines={1}>{selectedMovie.title}</Text>
+                 </ScrollView>
                  <Text style={styles.modalMeta}>
                     {selectedMovie.year}   •   {selectedMovie.runtime ? `${Math.floor(selectedMovie.runtime / 60)}h ${selectedMovie.runtime % 60}m` : '? min'}
                  </Text>
               </View>
 
-              {/* Status Segmented Controls */}
-              <View style={[styles.modalActionButtons, { gap: 8, paddingHorizontal: 24, paddingBottom: 16, marginTop: 12 }]}>
+              {/* Status buttons — transparent, sits between dark backdrop and white content */}
+              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 24, paddingVertical: 16 }}>
                 <AnimatedPill 
                   title="WATCHED" 
                   isActive={selectedMovie.status === 'WATCHED'} 
@@ -302,7 +302,9 @@ export default function MoviesScreen({ navigation }: any) {
                   }} 
                 />
               </View>
-              <View style={[styles.modalContentCore, { paddingTop: 24 }]}>
+
+              {/* White content area — description, cast, etc */}
+              <View style={[styles.modalContentCore, { paddingTop: 20 }]}>
                  {selectedMovie.summary && (
                    <View style={styles.summarySection}>
                      <Text style={styles.modalSummary}>{selectedMovie.summary}</Text>
@@ -411,10 +413,10 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
 
   // Rich Cinematic Modal
   modalFloatingHeader: { position: 'absolute', top: Platform.OS === 'ios' ? 60 : 40, right: 24, zIndex: 100 },
-  closeBtn: { padding: 8, backgroundColor: isDarkMode ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)', borderRadius: 20 },
+  closeBtn: { padding: 8, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20 },
   
-  modalTitle: { fontSize: 38, color: theme.colors.text, ...FONT_BOLD, marginBottom: 8, lineHeight: 42, textShadowColor: isDarkMode ? 'rgba(0,0,0,0.8)' : 'transparent', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 15 } as any,
-  modalMeta: { fontSize: 13, color: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.9)', ...FONT_BOLD, textTransform: 'uppercase', letterSpacing: 1, textShadowColor: isDarkMode ? 'rgba(0,0,0,0.8)' : 'transparent', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 10 } as any,
+  modalTitle: { fontSize: 38, color: '#FFFFFF', ...FONT_BOLD, marginBottom: 8, lineHeight: 42, textShadow: '0px 2px 15px rgba(0,0,0,0.8)' } as any,
+  modalMeta: { fontSize: 13, color: 'rgba(255,255,255,0.9)', ...FONT_BOLD, textTransform: 'uppercase', letterSpacing: 1, textShadow: '0px 1px 10px rgba(0,0,0,0.8)' } as any,
   
   modalActionButtons: { flexDirection: 'row', gap: 8, marginTop: 36, paddingHorizontal: 24, paddingBottom: 12 },
   pillBtnPrimary: { flex: 1, backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: 8 },
