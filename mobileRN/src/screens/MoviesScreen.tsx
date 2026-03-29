@@ -1,6 +1,7 @@
 declare var window: any;
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Platform, ImageBackground, Linking, Dimensions, Animated } from 'react-native';
+import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import { Plus, X, Trash2, CheckSquare, Play, RefreshCw, Search, ChevronRight } from 'lucide-react-native';
 import MediaSlimCard from '../components/MediaSlimCard';
 import { FadeInUp, smoothLayoutAnimation, springLayoutAnimation } from '../utils/animations';
@@ -55,6 +56,11 @@ export default function MoviesScreen({ navigation }: any) {
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<{type: 'single'|'bulk'} | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  const movieSwipeHandlers = useSwipeGesture({
+    onSwipeDown: () => { smoothLayoutAnimation(); setSelectedMovie(null); },
+    threshold: 60,
+  });
 
   const displayedMovies = useMemo(() => {
     let list = [...movies];
@@ -217,7 +223,7 @@ export default function MoviesScreen({ navigation }: any) {
       {/* Cinematic Detail Modal */}
       <Modal visible={!!selectedMovie} animationType="slide" presentationStyle="overFullScreen" transparent onRequestClose={() => setSelectedMovie(null)}>
         {selectedMovie && (
-           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }}>
+           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }} {...movieSwipeHandlers}>
             {/* The Backdrop Image - top half */}
             <View style={{ height: Dimensions.get('window').height * 0.50, width: '100%', position: 'absolute', top: 0, backgroundColor: '#000000' }}>
                {selectedMovie.backdrop_path ? (
@@ -262,7 +268,7 @@ export default function MoviesScreen({ navigation }: any) {
               {/* Title + Meta — positioned at bottom of dark backdrop area */}
               <View style={{ paddingTop: Dimensions.get('window').height * 0.35, paddingHorizontal: 24, paddingBottom: 16 }}>
                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
-                   <Text style={styles.modalTitle} numberOfLines={1}>{selectedMovie.title}</Text>
+                   <Text style={[styles.modalTitle, { flexShrink: 0 }]}>{selectedMovie.title}</Text>
                  </ScrollView>
                  <Text style={styles.modalMeta}>
                     {selectedMovie.year}   •   {selectedMovie.runtime ? `${Math.floor(selectedMovie.runtime / 60)}h ${selectedMovie.runtime % 60}m` : '? min'}

@@ -3,9 +3,10 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LayoutGrid, Film, Tv, Search, HardDrive } from 'lucide-react-native';
-import { View, Text, StyleSheet, StatusBar, Platform, TouchableOpacity, Animated, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, Platform, TouchableOpacity, Animated, Pressable, Dimensions, PanResponder } from 'react-native';
 
 import { useAppTheme } from '../context/ThemeContext';
+import { useSwipeGesture } from '../hooks/useSwipeGesture';
 
 import MoviesScreen from '../screens/MoviesScreen';
 import TVScreen from '../screens/TVScreen';
@@ -92,15 +93,55 @@ function FloatingTabBar({ state, descriptors, navigation }: any) {
   );
 }
 
+const TAB_NAMES = ['Analytics', 'Movies', 'Series', 'Search', 'Backup'];
+
 function MainTabs() {
+  const slideAnim = React.useRef(new Animated.Value(0)).current;
+  const fadeAnim = React.useRef(new Animated.Value(1)).current;
+  const screenWidth = Dimensions.get('window').width;
+  const navigationRef = React.useRef<any>(null);
+  const isAnimating = React.useRef(false);
+
+  const animateAndNavigate = React.useCallback((direction: 'left' | 'right') => {
+    if (!navigationRef.current || isAnimating.current) return;
+    const nav = navigationRef.current;
+    const navState = nav.getState();
+    const targetIndex = direction === 'left' ? navState.index + 1 : navState.index - 1;
+    if (targetIndex < 0 || targetIndex >= TAB_NAMES.length) return;
+
+    isAnimating.current = true;
+    const slideOut = direction === 'left' ? -screenWidth * 0.3 : screenWidth * 0.3;
+    Animated.parallel([
+      Animated.timing(slideAnim, { toValue: slideOut, duration: 150, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 0.2, duration: 150, useNativeDriver: true }),
+    ]).start(() => {
+      nav.navigate(TAB_NAMES[targetIndex]);
+      slideAnim.setValue(direction === 'left' ? screenWidth * 0.3 : -screenWidth * 0.3);
+      Animated.parallel([
+        Animated.spring(slideAnim, { toValue: 0, friction: 12, tension: 120, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+      ]).start(() => { isAnimating.current = false; });
+    });
+  }, [slideAnim, fadeAnim, screenWidth]);
+
+  const swipeHandlers = useSwipeGesture({
+    onSwipeLeft: () => animateAndNavigate('left'),
+    onSwipeRight: () => animateAndNavigate('right'),
+    threshold: 40,
+  });
+
   return (
-    <Tab.Navigator tabBar={(props) => <FloatingTabBar {...props} />} screenOptions={{ headerShown: false }} initialRouteName="Analytics">
-      <Tab.Screen name="Analytics" component={AnalyticsScreen} />
-      <Tab.Screen name="Movies" component={MoviesScreen} />
-      <Tab.Screen name="Series" component={TVScreen} />
-      <Tab.Screen name="Search" component={SearchScreen} />
-      <Tab.Screen name="Backup" component={BackupScreen} />
-    </Tab.Navigator>
+    <View style={{ flex: 1, overflow: 'hidden' }}>
+      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }], opacity: fadeAnim }} {...swipeHandlers}>
+        <Tab.Navigator tabBar={(props) => { navigationRef.current = props.navigation; return <FloatingTabBar {...props} />; }} screenOptions={{ headerShown: false }} initialRouteName="Analytics">
+          <Tab.Screen name="Analytics" component={AnalyticsScreen} />
+          <Tab.Screen name="Movies" component={MoviesScreen} />
+          <Tab.Screen name="Series" component={TVScreen} />
+          <Tab.Screen name="Search" component={SearchScreen} />
+          <Tab.Screen name="Backup" component={BackupScreen} />
+        </Tab.Navigator>
+      </Animated.View>
+    </View>
   );
 }
 

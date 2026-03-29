@@ -1,6 +1,7 @@
 declare var window: any;
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Platform, ImageBackground, Linking, ActivityIndicator, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Platform, ImageBackground, Linking, ActivityIndicator, Dimensions, Animated, PanResponder } from 'react-native';
+import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import { Tv, Play, Check, X, RefreshCw, ChevronLeft, Trash2, ShieldAlert, CheckSquare, Plus, Clock } from 'lucide-react-native';
 import { useLibrary } from '../context/LibraryContext';
 import { FadeInUp, smoothLayoutAnimation, springLayoutAnimation } from '../utils/animations';
@@ -59,6 +60,41 @@ export default function TVScreen({ navigation }: any) {
   const [selectedShow, setSelectedShow] = useState<any>(null);
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [selectedEpisode, setSelectedEpisode] = useState<any | null>(null);
+
+  // Episode slide animation (horizontal)
+  const episodeSlideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current;
+  const [episodeVisible, setEpisodeVisible] = useState(false);
+
+  const openEpisode = useCallback((ep: any) => {
+    setSelectedEpisode(ep);
+    setEpisodeVisible(true);
+    episodeSlideAnim.setValue(Dimensions.get('window').width);
+    Animated.spring(episodeSlideAnim, { toValue: 0, friction: 8, tension: 65, useNativeDriver: true }).start();
+  }, [episodeSlideAnim]);
+
+  const closeEpisode = useCallback((direction: 'left' | 'right' = 'right') => {
+    const target = direction === 'right' ? Dimensions.get('window').width : -Dimensions.get('window').width;
+    Animated.timing(episodeSlideAnim, { toValue: target, duration: 250, useNativeDriver: true }).start(() => {
+      setEpisodeVisible(false);
+      setSelectedEpisode(null);
+    });
+  }, [episodeSlideAnim]);
+
+  // Swipe gestures
+  const showSwipeHandlers = useSwipeGesture({
+    onSwipeDown: () => {
+      if (selectedSeason !== null) { smoothLayoutAnimation(); setSelectedSeason(null); }
+      else if (selectedShow) { smoothLayoutAnimation(); setSelectedShow(null); }
+    },
+    threshold: 60,
+  });
+
+  const episodeSwipeHandlers = useSwipeGesture({
+    onSwipeLeft: () => closeEpisode('left'),
+    onSwipeRight: () => closeEpisode('right'),
+    threshold: 50,
+    captureHorizontal: true,
+  });
   const [loadingSeason, setLoadingSeason] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{type: 'single' | 'bulk'} | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -332,8 +368,8 @@ export default function TVScreen({ navigation }: any) {
 
   // Back button handler for web (browser back)
   const handleShowModalBack = useCallback(() => {
-    if (selectedEpisode) {
-      setSelectedEpisode(null);
+    if (episodeVisible) {
+      closeEpisode('right');
     } else if (selectedSeason !== null) {
       smoothLayoutAnimation();
       setSelectedSeason(null);
@@ -341,7 +377,7 @@ export default function TVScreen({ navigation }: any) {
       smoothLayoutAnimation();
       setSelectedShow(null);
     }
-  }, [selectedEpisode, selectedSeason, selectedShow]);
+  }, [episodeVisible, selectedSeason, selectedShow, closeEpisode]);
 
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
@@ -441,7 +477,7 @@ export default function TVScreen({ navigation }: any) {
       {/* Cinematic Detail Modal for Series/Seasons */}
       <Modal visible={!!selectedShow} animationType="slide" presentationStyle="overFullScreen" transparent onRequestClose={() => { if (selectedSeason !== null) { smoothLayoutAnimation(); setSelectedSeason(null); } else { smoothLayoutAnimation(); setSelectedShow(null); } }}>
         {selectedShow && (
-           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }}>
+           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }} {...showSwipeHandlers}>
             <View style={{ height: Dimensions.get('window').height * 0.6, width: '100%', position: 'absolute', top: 0, backgroundColor: '#000000' }}>
                {selectedShow.backdrop_path ? (
                   <Image source={{ uri: `https://image.tmdb.org/t/p/w1280${selectedShow.backdrop_path}` }} style={{ width: '100%', height: '100%', opacity: 0.6 }} />
@@ -658,7 +694,7 @@ export default function TVScreen({ navigation }: any) {
                         <TouchableOpacity 
                           key={ep.id} 
                           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
-                          onPress={() => setSelectedEpisode(ep)}
+                          onPress={() => openEpisode(ep)}
                           activeOpacity={0.7}
                         >
                           <View style={{ flex: 1, paddingRight: 16 }}>
@@ -686,107 +722,107 @@ export default function TVScreen({ navigation }: any) {
                   )
                 )}
               </ScrollView>
-          </View>
-        )}
-      </Modal>
 
-      {/* Deep-Linked Episode Details Modal */}
-      <Modal visible={!!selectedEpisode} animationType="slide" presentationStyle="overFullScreen" transparent onRequestClose={() => { setSelectedEpisode(null); }}>
-        {selectedEpisode && (
-          <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            <View style={{ height: Dimensions.get('window').height * 0.6, width: '100%', position: 'absolute', top: 0 }}>
-               {selectedEpisode.still_path ? (
-                  <Image source={{ uri: `https://image.tmdb.org/t/p/w1280${selectedEpisode.still_path}` }} style={{ width: '100%', height: '100%', opacity: 0.6 }} />
-               ) : (
-                  <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                     <Image source={{ uri: selectedShow?.backdrop_path ? `https://image.tmdb.org/t/p/w1280${selectedShow.backdrop_path}` : selectedShow?.image }} style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0.4 }} blurRadius={20} />
-                     <Image source={{ uri: selectedShow?.backdrop_path ? `https://image.tmdb.org/t/p/w1280${selectedShow.backdrop_path}` : selectedShow?.image }} style={{ width: '100%', height: '100%', opacity: 0.8 }} resizeMode="contain" />
+          {/* Episode Detail — Horizontal Slide Overlay (inside Modal so it renders on top) */}
+          {episodeVisible && selectedEpisode && (
+            <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, transform: [{ translateX: episodeSlideAnim }] }} {...episodeSwipeHandlers}>
+              <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+                <View style={{ height: Dimensions.get('window').height * 0.6, width: '100%', position: 'absolute', top: 0 }}>
+                   {selectedEpisode.still_path ? (
+                      <Image source={{ uri: `https://image.tmdb.org/t/p/w1280${selectedEpisode.still_path}` }} style={{ width: '100%', height: '100%', opacity: 0.6 }} />
+                   ) : (
+                      <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                         <Image source={{ uri: selectedShow?.backdrop_path ? `https://image.tmdb.org/t/p/w1280${selectedShow.backdrop_path}` : selectedShow?.image }} style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0.4 }} blurRadius={20} />
+                         <Image source={{ uri: selectedShow?.backdrop_path ? `https://image.tmdb.org/t/p/w1280${selectedShow.backdrop_path}` : selectedShow?.image }} style={{ width: '100%', height: '100%', opacity: 0.8 }} resizeMode="contain" />
+                      </View>
+                   )}
+                   {Array.from({ length: 24 }).map((_, i) => (
+                     <View 
+                       key={`grad-${i}`} 
+                       style={{ position: 'absolute', bottom: (23 - i) * 4, left: 0, right: 0, height: 4.5, backgroundColor: isDarkMode ? `rgba(0,0,0,${(i / 23).toFixed(2)})` : `rgba(249, 249, 251, ${(i / 23).toFixed(2)})` }} 
+                     />
+                   ))}
+                </View>
+
+                <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
+                  {(() => {
+                     if (!selectedEpisode.status) return null;
+                     let ribbonColor = theme.colors.ribbonWatched;
+                     let ribbonText = 'WATCHED';
+                     if (selectedEpisode.status === 'WATCHING') {
+                       ribbonColor = theme.colors.ribbonWatching;
+                       ribbonText = 'WATCHING';
+                     } else if (selectedEpisode.status === 'WILL WATCH' || selectedEpisode.status === 'PLAN TO WATCH') {
+                       ribbonColor = theme.colors.ribbonWaitlist;
+                       ribbonText = 'WAITLIST';
+                     }
+                     return (
+                       <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: ribbonColor, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+                         <Text style={{ color: theme.colors.background, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>{ribbonText}</Text>
+                       </View>
+                     );
+                   })()}
+                  <View style={styles.modalFloatingHeader}>
+                    <TouchableOpacity style={styles.closeBtn} onPress={() => closeEpisode('right')}>
+                      <X size={24} color={theme.colors.text} />
+                    </TouchableOpacity>
                   </View>
-               )}
-               {/* High-res gradient shim arrays to simulate smooth linear fade */}
-               {Array.from({ length: 24 }).map((_, i) => (
-                 <View 
-                   key={`grad-${i}`} 
-                   style={{ position: 'absolute', bottom: (23 - i) * 4, left: 0, right: 0, height: 4.5, backgroundColor: isDarkMode ? `rgba(0,0,0,${(i / 23).toFixed(2)})` : `rgba(249, 249, 251, ${(i / 23).toFixed(2)})` }} 
-                 />
-               ))}
-            </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
-              {/* TOP LEFT STATUS RIBBON - scrolls with content */}
-              {(() => {
-                 if (!selectedEpisode.status) return null;
-                 let ribbonColor = theme.colors.ribbonWatched;
-                 let ribbonText = 'WATCHED';
-                 if (selectedEpisode.status === 'WATCHING') {
-                   ribbonColor = theme.colors.ribbonWatching;
-                   ribbonText = 'WATCHING';
-                 } else if (selectedEpisode.status === 'WILL WATCH' || selectedEpisode.status === 'PLAN TO WATCH') {
-                   ribbonColor = theme.colors.ribbonWaitlist;
-                   ribbonText = 'WAITLIST';
-                 }
-                 return (
-                   <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: ribbonColor, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-                     <Text style={{ color: theme.colors.background, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>{ribbonText}</Text>
-                   </View>
-                 );
-               })()}
-              <View style={styles.modalFloatingHeader}>
-                <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedEpisode(null)}>
-                  <X size={24} color={theme.colors.text} />
-                </TouchableOpacity>
-              </View>
+                  <View style={{ paddingTop: Dimensions.get('window').height * 0.45, paddingHorizontal: 24 }}>
+                    <Text style={[styles.superTitle, { marginBottom: 8, color: theme.colors.text }]}>EPISODE {typeof selectedEpisode.episode_number !== 'undefined' ? selectedEpisode.episode_number : '?'}</Text>
+                    <Text style={[{ fontSize: 38, color: theme.colors.text, ...FONT_BOLD, marginBottom: 8, lineHeight: 42, textShadow: isDarkMode ? '0px 2px 15px rgba(0,0,0,0.8)' : '0px 2px 15px rgba(255,255,255,1)' } as any]} numberOfLines={3}>{selectedEpisode.title || selectedEpisode.name}</Text>
+                    <Text style={[{ fontSize: 13, color: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.9)', ...FONT_BOLD, textTransform: 'uppercase', letterSpacing: 1, textShadow: isDarkMode ? '0px 1px 10px rgba(0,0,0,0.8)' : '0px 1px 10px rgba(255,255,255,1)' } as any]}>
+                      {selectedEpisode.date || 'TBA'}   •   {selectedEpisode.runtime ? `${selectedEpisode.runtime}m` : '? min'}
+                    </Text>
+                  </View>
 
-              <View style={{ paddingTop: Dimensions.get('window').height * 0.45, paddingHorizontal: 24 }}>
-                <Text style={[styles.superTitle, { marginBottom: 8, color: theme.colors.text }]}>EPISODE {typeof selectedEpisode.episode_number !== 'undefined' ? selectedEpisode.episode_number : '?'}</Text>
-                <Text style={[{ fontSize: 38, color: theme.colors.text, ...FONT_BOLD, marginBottom: 8, lineHeight: 42, textShadow: isDarkMode ? '0px 2px 15px rgba(0,0,0,0.8)' : '0px 2px 15px rgba(255,255,255,1)' } as any]} numberOfLines={3}>{selectedEpisode.title || selectedEpisode.name}</Text>
-                <Text style={[{ fontSize: 13, color: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.9)', ...FONT_BOLD, textTransform: 'uppercase', letterSpacing: 1, textShadow: isDarkMode ? '0px 1px 10px rgba(0,0,0,0.8)' : '0px 1px 10px rgba(255,255,255,1)' } as any]}>
-                  {selectedEpisode.date || 'TBA'}   •   {selectedEpisode.runtime ? `${selectedEpisode.runtime}m` : '? min'}
-                </Text>
-              </View>
+                  <View style={[styles.modalActionButtons, { gap: 8, paddingHorizontal: 24, paddingBottom: 16, marginTop: 12 }]}>
+                    <AnimatedPill 
+                      title="WATCHED" 
+                      isActive={selectedEpisode.status === 'WATCHED'} 
+                      activeColor={theme.colors.ribbonWatched} 
+                      onSelect={() => {
+                        handleEpisodeStatusChange(selectedEpisode.id, 'WATCHED', 'success');
+                        setSelectedEpisode({ ...selectedEpisode, status: 'WATCHED', statusColor: 'success' });
+                      }} 
+                    />
+                    <AnimatedPill 
+                      title="WATCHING" 
+                      isActive={selectedEpisode.status === 'WATCHING'} 
+                      activeColor={theme.colors.ribbonWatching} 
+                      onSelect={() => {
+                        handleEpisodeStatusChange(selectedEpisode.id, 'WATCHING', 'primary');
+                        setSelectedEpisode({ ...selectedEpisode, status: 'WATCHING', statusColor: 'primary' });
+                      }} 
+                    />
+                    <AnimatedPill 
+                      title="WAITLIST" 
+                      isActive={selectedEpisode.status === 'WILL WATCH'} 
+                      activeColor={theme.colors.ribbonWaitlist} 
+                      onSelect={() => {
+                        handleEpisodeStatusChange(selectedEpisode.id, 'WILL WATCH', 'warning');
+                        setSelectedEpisode({ ...selectedEpisode, status: 'WILL WATCH', statusColor: 'warning' });
+                      }} 
+                    />
+                  </View>
 
-              {/* Status Segmented Controls */}
-              <View style={[styles.modalActionButtons, { gap: 8, paddingHorizontal: 24, paddingBottom: 16, marginTop: 12 }]}>
-                <AnimatedPill 
-                  title="WATCHED" 
-                  isActive={selectedEpisode.status === 'WATCHED'} 
-                  activeColor={theme.colors.ribbonWatched} 
-                  onSelect={() => {
-                    handleEpisodeStatusChange(selectedEpisode.id, 'WATCHED', 'success');
-                    setSelectedEpisode({ ...selectedEpisode, status: 'WATCHED', statusColor: 'success' });
-                  }} 
-                />
-                <AnimatedPill 
-                  title="WATCHING" 
-                  isActive={selectedEpisode.status === 'WATCHING'} 
-                  activeColor={theme.colors.ribbonWatching} 
-                  onSelect={() => {
-                    handleEpisodeStatusChange(selectedEpisode.id, 'WATCHING', 'primary');
-                    setSelectedEpisode({ ...selectedEpisode, status: 'WATCHING', statusColor: 'primary' });
-                  }} 
-                />
-                <AnimatedPill 
-                  title="WAITLIST" 
-                  isActive={selectedEpisode.status === 'WILL WATCH'} 
-                  activeColor={theme.colors.ribbonWaitlist} 
-                  onSelect={() => {
-                    handleEpisodeStatusChange(selectedEpisode.id, 'WILL WATCH', 'warning');
-                    setSelectedEpisode({ ...selectedEpisode, status: 'WILL WATCH', statusColor: 'warning' });
-                  }} 
-                />
+                  <View style={[styles.modalContentCore, { paddingTop: 24 }]}>
+                     {(selectedEpisode.summary || selectedEpisode.overview) && (
+                       <View style={styles.summarySection}>
+                         <Text style={styles.modalSummary}>{selectedEpisode.summary || selectedEpisode.overview}</Text>
+                       </View>
+                     )}
+                  </View>
+                </ScrollView>
               </View>
+            </Animated.View>
+          )}
 
-              <View style={[styles.modalContentCore, { paddingTop: 24 }]}>
-                 {(selectedEpisode.summary || selectedEpisode.overview) && (
-                   <View style={styles.summarySection}>
-                     <Text style={styles.modalSummary}>{selectedEpisode.summary || selectedEpisode.overview}</Text>
-                   </View>
-                 )}
-              </View>
-            </ScrollView>
           </View>
         )}
       </Modal>
+
+
 
       <ConfirmDeleteModal
          visible={!!confirmDelete}
