@@ -246,10 +246,8 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingTop: Platform.OS === 'ios' ? 60 : 16,
     paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
   },
   superTitle: { color: theme.colors.primary, ...FONT_BOLD, fontSize: 11, letterSpacing: 2, marginBottom: 4 },
   headerTitle: { fontSize: 36, color: theme.colors.text, ...FONT_BOLD, letterSpacing: 1 },

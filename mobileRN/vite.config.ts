@@ -1,8 +1,10 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  return {
   plugins: [
     react({
       // Handle JSX in .js files from node_modules (e.g. react-native-toast-message)
@@ -41,9 +43,11 @@ export default defineConfig({
   define: {
     __DEV__: JSON.stringify(true),
     'process.env.NODE_ENV': JSON.stringify('development'),
+    'process.env.VITE_TMDB_API_KEY': JSON.stringify(env.VITE_TMDB_API_KEY || ''),
     global: 'window',
   },
   server: {
     port: 19006,
   },
+  };
 });

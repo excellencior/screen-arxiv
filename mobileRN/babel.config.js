@@ -1,4 +1,4 @@
 module.exports = {
   presets: ['module:@react-native/babel-preset'],
-  plugins: ['@babel/plugin-transform-modules-commonjs'],
+  plugins: ['transform-inline-environment-variables'],
 };

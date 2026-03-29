@@ -748,7 +748,7 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingTop: Platform.OS === 'ios' ? 60 : 16,
     paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -784,7 +784,7 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   modalMeta: { fontSize: 13, color: 'rgba(255,255,255,0.9)', ...FONT_BOLD, textTransform: 'uppercase', letterSpacing: 1, textShadow: '0px 1px 10px rgba(0,0,0,0.8)' } as any,
   
   modalActionButtons: { flexDirection: 'row', gap: 12, marginTop: 24, paddingHorizontal: 24, paddingBottom: 24 },
-  pillBtnPrimary: { flex: 1, backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 8 },
+  pillBtnPrimary: { flex: 1, backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 20, borderRadius: 8 },
   pillBtnPrimaryText: { color: theme.colors.primaryText, ...FONT_BOLD, fontSize: 15, marginLeft: 8 },
   pillBtnDanger: { backgroundColor: theme.colors.danger + '22', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.danger },
   

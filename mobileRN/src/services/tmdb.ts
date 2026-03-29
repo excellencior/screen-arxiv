@@ -1,4 +1,5 @@
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+// @ts-ignore — Metro uses process.env, Vite config maps VITE_TMDB_API_KEY to it
+const API_KEY = process.env.VITE_TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
 const fetchFromTMDB = async (endpoint: string) => {

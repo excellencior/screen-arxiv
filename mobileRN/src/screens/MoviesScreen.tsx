@@ -372,7 +372,7 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingTop: Platform.OS === 'ios' ? 60 : 16,
     paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'flex-end',

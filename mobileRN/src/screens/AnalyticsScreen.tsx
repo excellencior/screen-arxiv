@@ -260,7 +260,7 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
   
   // Hero Section
-  heroSection: { paddingTop: Platform.OS === 'ios' ? 80 : 60, paddingHorizontal: 24, alignItems: 'center', marginBottom: 24 },
+  heroSection: { paddingTop: Platform.OS === 'ios' ? 80 : 16, paddingHorizontal: 24, alignItems: 'center', marginBottom: 24 },
   heroLabel: { color: theme.colors.primary, ...FONT_BOLD, fontSize: 13, letterSpacing: 3, marginBottom: 8 },
   heroValueContainer: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center' },
   heroNumber: { color: theme.colors.text, ...FONT_BOLD, fontSize: 72, lineHeight: 80 },
