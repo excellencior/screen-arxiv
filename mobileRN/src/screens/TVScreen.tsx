@@ -255,12 +255,28 @@ export default function TVScreen({ navigation }: any) {
   };
 
   const handleMarkAllSeasonsWatched = () => {
-    if (!selectedShow?.seasons) return;
+    if (!selectedShow?.seasons || selectedShow.seasons.length === 0) return;
+
+    // Check if currently fully watched to support toggle behavior
+    const currentTotal = selectedShow.progress?.total || selectedShow.total_episodes || 0;
+    const currentWatched = selectedShow.progress?.watched || 0;
+    const isCurrentlyFullyWatched = currentTotal > 0 && currentWatched >= currentTotal;
+
     const now = new Date();
     const updatedSeasons = selectedShow.seasons.map((s: any) => {
       let updatedEps = s.episodes || [];
       const hasEps = updatedEps.length > 0;
 
+      if (isCurrentlyFullyWatched) {
+        // TOGGLE OFF: Reset everything to WILL WATCH
+        if (hasEps) {
+          updatedEps = updatedEps.map((ep: any) => ({ ...ep, status: 'WILL WATCH', statusColor: 'warning' }));
+          return { ...s, status: 'WILL WATCH', episodes: updatedEps };
+        }
+        return { ...s, status: 'WILL WATCH', episodes: [] };
+      }
+
+      // TOGGLE ON: Mark everything as WATCHED
       if (hasEps) {
         updatedEps = updatedEps.map((ep: any) => {
           const isReleased = ep.date !== 'TBA' && new Date(ep.date) <= now;
@@ -278,7 +294,12 @@ export default function TVScreen({ navigation }: any) {
       }
     });
 
-    const total = selectedShow.total_episodes || updatedSeasons.reduce((acc: number, s: any) => acc + (s.episode_count || s.episodes?.length || 0), 0);
+    // Compute total from season data for consistency instead of relying on potentially mismatched total_episodes
+    const computedTotal = updatedSeasons.reduce((acc: number, s: any) => {
+      if (s.episodes?.length > 0) return acc + s.episodes.length;
+      return acc + (s.episode_count || 0);
+    }, 0);
+    const total = computedTotal || selectedShow.total_episodes || 0;
     const { status, statusColor, watchedCount } = deriveShowStatus(updatedSeasons, total);
     const updated = { ...selectedShow, seasons: updatedSeasons, progress: { watched: watchedCount, total }, status, statusColor };
     setSelectedShow(updated);
@@ -420,23 +441,7 @@ export default function TVScreen({ navigation }: any) {
       {/* Cinematic Detail Modal for Series/Seasons */}
       <Modal visible={!!selectedShow} animationType="slide" presentationStyle="overFullScreen" transparent onRequestClose={() => { if (selectedSeason !== null) { smoothLayoutAnimation(); setSelectedSeason(null); } else { smoothLayoutAnimation(); setSelectedShow(null); } }}>
         {selectedShow && (
-          <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }}>
-             {/* TOP LEFT WATCHED RIBBON */}
-             {(() => {
-               const total = selectedShow.progress?.total || selectedShow.total_episodes || 0;
-               const watched = selectedShow.progress?.watched || 0;
-               const isFullyWatchedShow = selectedSeason === null && total > 0 && total === watched;
-               const isFullyWatchedSeason = selectedSeason !== null && activeSeason?.episodes?.length > 0 && activeSeason.episodes.every((ep:any) => ep.status === 'WATCHED');
-               
-               if (isFullyWatchedShow || isFullyWatchedSeason) {
-                 return (
-                   <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: theme.colors.ribbonWatched, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-                     <Text style={{ color: theme.colors.background, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>WATCHED</Text>
-                   </View>
-                 );
-               }
-               return null;
-             })()}
+           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }}>
             <View style={{ height: Dimensions.get('window').height * 0.6, width: '100%', position: 'absolute', top: 0, backgroundColor: '#000000' }}>
                {selectedShow.backdrop_path ? (
                   <Image source={{ uri: `https://image.tmdb.org/t/p/w1280${selectedShow.backdrop_path}` }} style={{ width: '100%', height: '100%', opacity: 0.6 }} />
@@ -452,18 +457,34 @@ export default function TVScreen({ navigation }: any) {
                ))}
             </View>
 
-            <View style={styles.modalFloatingHeader}>
-              {selectedSeason !== null && (
-                <TouchableOpacity style={[styles.closeBtn, { marginRight: 12, backgroundColor: 'rgba(0,0,0,0.6)' }]} onPress={() => { smoothLayoutAnimation(); setSelectedSeason(null); }}>
-                  <ChevronLeft size={24} color="#FFFFFF" />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity style={[styles.closeBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]} onPress={() => { smoothLayoutAnimation(); setSelectedShow(null); setSelectedSeason(null); }}>
-                <X size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-
             <ScrollView key={selectedSeason === null ? "show" : `season-${selectedSeason}`} contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
+              {/* TOP LEFT WATCHED RIBBON - scrolls with content */}
+              {(() => {
+                const total = selectedShow.progress?.total || selectedShow.total_episodes || 0;
+                const watched = selectedShow.progress?.watched || 0;
+                const isFullyWatchedShow = selectedSeason === null && total > 0 && watched >= total;
+                const isFullyWatchedSeason = selectedSeason !== null && activeSeason?.episodes?.length > 0 && activeSeason.episodes.every((ep:any) => ep.status === 'WATCHED');
+                
+                if (isFullyWatchedShow || isFullyWatchedSeason) {
+                  return (
+                    <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: theme.colors.ribbonWatched, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+                      <Text style={{ color: theme.colors.background, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>WATCHED</Text>
+                    </View>
+                  );
+                }
+                return null;
+              })()}
+              <View style={styles.modalFloatingHeader}>
+                {selectedSeason !== null && (
+                  <TouchableOpacity style={[styles.closeBtn, { marginRight: 12, backgroundColor: 'rgba(0,0,0,0.6)' }]} onPress={() => { smoothLayoutAnimation(); setSelectedSeason(null); }}>
+                    <ChevronLeft size={24} color="#FFFFFF" />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={[styles.closeBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]} onPress={() => { smoothLayoutAnimation(); setSelectedShow(null); setSelectedSeason(null); }}>
+                  <X size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+
               {selectedSeason === null ? (
                 <>
                   <View style={{ paddingTop: Dimensions.get('window').height * 0.38, paddingHorizontal: 24 }}>
@@ -505,7 +526,7 @@ export default function TVScreen({ navigation }: any) {
                     {(() => {
                       const totalStatus = selectedShow.progress?.total || selectedShow.total_episodes || 0;
                       const watchedStatus = selectedShow.progress?.watched || 0;
-                      const isFullyWatchedShow = totalStatus > 0 && totalStatus === watchedStatus;
+                      const isFullyWatchedShow = totalStatus > 0 && watchedStatus >= totalStatus;
                       return (
                         <TouchableOpacity style={[styles.pillBtnPrimary, { flex: 1, justifyContent: 'center', backgroundColor: isFullyWatchedShow ? theme.colors.surfaceHighlight : theme.colors.ribbonWatched, marginLeft: selectedShow.trailer ? 12 : 0 }]} onPress={handleMarkAllSeasonsWatched} activeOpacity={0.8}>
                            <Check size={20} color={isFullyWatchedShow ? theme.colors.ribbonWatched : '#FFFFFF'} />
@@ -550,7 +571,7 @@ export default function TVScreen({ navigation }: any) {
                           {selectedShow.seasons.map((season: any, index: number) => {
                             const eps = season.episodes || [];
                             const watchedCount = eps.filter((e: any) => e.status === 'WATCHED').length;
-                            const isFullyWatched = eps.length > 0 && watchedCount === eps.length;
+                            const isFullyWatched = (eps.length > 0 && watchedCount === eps.length) || (eps.length === 0 && season.status === 'WATCHED');
                             return (
                               <FadeInUp key={season.id} delay={index * 50}>
                                 <TouchableOpacity activeOpacity={0.8} style={{ width: 110 }} onPress={() => { smoothLayoutAnimation(); handleSeasonClick(season.season_number); }}>
@@ -630,24 +651,6 @@ export default function TVScreen({ navigation }: any) {
       <Modal visible={!!selectedEpisode} animationType="slide" presentationStyle="overFullScreen" transparent onRequestClose={() => { setSelectedEpisode(null); }}>
         {selectedEpisode && (
           <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-             {/* TOP LEFT STATUS RIBBON */}
-             {(() => {
-                if (!selectedEpisode.status) return null;
-                let ribbonColor = theme.colors.ribbonWatched;
-                let ribbonText = 'WATCHED';
-                if (selectedEpisode.status === 'WATCHING') {
-                  ribbonColor = theme.colors.ribbonWatching;
-                  ribbonText = 'WATCHING';
-                } else if (selectedEpisode.status === 'WILL WATCH' || selectedEpisode.status === 'PLAN TO WATCH') {
-                  ribbonColor = theme.colors.ribbonWaitlist;
-                  ribbonText = 'WAITLIST';
-                }
-                return (
-                  <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: ribbonColor, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-                    <Text style={{ color: theme.colors.background, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>{ribbonText}</Text>
-                  </View>
-                );
-              })()}
             <View style={{ height: Dimensions.get('window').height * 0.6, width: '100%', position: 'absolute', top: 0 }}>
                {selectedEpisode.still_path ? (
                   <Image source={{ uri: `https://image.tmdb.org/t/p/w1280${selectedEpisode.still_path}` }} style={{ width: '100%', height: '100%', opacity: 0.6 }} />
@@ -666,13 +669,31 @@ export default function TVScreen({ navigation }: any) {
                ))}
             </View>
 
-            <View style={styles.modalFloatingHeader}>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedEpisode(null)}>
-                <X size={24} color={theme.colors.text} />
-              </TouchableOpacity>
-            </View>
-
             <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
+              {/* TOP LEFT STATUS RIBBON - scrolls with content */}
+              {(() => {
+                 if (!selectedEpisode.status) return null;
+                 let ribbonColor = theme.colors.ribbonWatched;
+                 let ribbonText = 'WATCHED';
+                 if (selectedEpisode.status === 'WATCHING') {
+                   ribbonColor = theme.colors.ribbonWatching;
+                   ribbonText = 'WATCHING';
+                 } else if (selectedEpisode.status === 'WILL WATCH' || selectedEpisode.status === 'PLAN TO WATCH') {
+                   ribbonColor = theme.colors.ribbonWaitlist;
+                   ribbonText = 'WAITLIST';
+                 }
+                 return (
+                   <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: ribbonColor, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+                     <Text style={{ color: theme.colors.background, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>{ribbonText}</Text>
+                   </View>
+                 );
+               })()}
+              <View style={styles.modalFloatingHeader}>
+                <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedEpisode(null)}>
+                  <X size={24} color={theme.colors.text} />
+                </TouchableOpacity>
+              </View>
+
               <View style={{ paddingTop: Dimensions.get('window').height * 0.45, paddingHorizontal: 24 }}>
                 <Text style={[styles.superTitle, { marginBottom: 8, color: theme.colors.text }]}>EPISODE {typeof selectedEpisode.episode_number !== 'undefined' ? selectedEpisode.episode_number : '?'}</Text>
                 <Text style={[{ fontSize: 38, color: theme.colors.text, ...FONT_BOLD, marginBottom: 8, lineHeight: 42, textShadow: isDarkMode ? '0px 2px 15px rgba(0,0,0,0.8)' : '0px 2px 15px rgba(255,255,255,1)' } as any]} numberOfLines={3}>{selectedEpisode.title || selectedEpisode.name}</Text>
@@ -788,7 +809,7 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   pillBtnPrimaryText: { color: theme.colors.primaryText, ...FONT_BOLD, fontSize: 15, marginLeft: 8 },
   pillBtnDanger: { backgroundColor: theme.colors.danger + '22', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.danger },
   
-  modalContentCore: { backgroundColor: theme.colors.background, paddingHorizontal: 24, paddingBottom: 40 },
+  modalContentCore: { backgroundColor: theme.colors.background, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   summarySection: { marginBottom: 32 },
   sectionHeading: { color: theme.colors.textSecondary, ...FONT_BOLD, fontSize: 11, letterSpacing: 2, marginBottom: 12 },
   modalSummary: { color: theme.colors.text, ...FONT_REGULAR, fontSize: 15, lineHeight: 24, opacity: 0.9 },

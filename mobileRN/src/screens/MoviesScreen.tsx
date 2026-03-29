@@ -218,24 +218,6 @@ export default function MoviesScreen({ navigation }: any) {
       <Modal visible={!!selectedMovie} animationType="slide" presentationStyle="overFullScreen" transparent onRequestClose={() => setSelectedMovie(null)}>
         {selectedMovie && (
           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }}>
-             {/* TOP LEFT STATUS RIBBON */}
-             {(() => {
-                if (!selectedMovie.status) return null;
-                let ribbonColor = theme.colors.ribbonWatched;
-                let ribbonText = 'WATCHED';
-                if (selectedMovie.status === 'WATCHING') {
-                  ribbonColor = theme.colors.ribbonWatching;
-                  ribbonText = 'WATCHING';
-                } else if (selectedMovie.status === 'PLAN TO WATCH' || selectedMovie.status === 'WILL WATCH') {
-                  ribbonColor = theme.colors.ribbonWaitlist;
-                  ribbonText = 'WAITLIST';
-                }
-                return (
-                  <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: ribbonColor, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-                    <Text style={{ color: theme.colors.ribbonText, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>{ribbonText}</Text>
-                  </View>
-                );
-              })()}
             {/* The Backdrop Image is confined to the top half */}
             <View style={{ height: Dimensions.get('window').height * 0.6, width: '100%', position: 'absolute', top: 0, backgroundColor: theme.colors.background }}>
                {selectedMovie.backdrop_path ? (
@@ -255,13 +237,30 @@ export default function MoviesScreen({ navigation }: any) {
                ))}
             </View>
 
-            <View style={styles.modalFloatingHeader}>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => { smoothLayoutAnimation(); setSelectedMovie(null); }}>
-                <X size={24} color={theme.colors.text} />
-              </TouchableOpacity>
-            </View>
-
             <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
+              {/* TOP LEFT STATUS RIBBON - scrolls with content */}
+              {(() => {
+                 if (!selectedMovie.status) return null;
+                 let ribbonColor = theme.colors.ribbonWatched;
+                 let ribbonText = 'WATCHED';
+                 if (selectedMovie.status === 'WATCHING') {
+                   ribbonColor = theme.colors.ribbonWatching;
+                   ribbonText = 'WATCHING';
+                 } else if (selectedMovie.status === 'PLAN TO WATCH' || selectedMovie.status === 'WILL WATCH') {
+                   ribbonColor = theme.colors.ribbonWaitlist;
+                   ribbonText = 'WAITLIST';
+                 }
+                 return (
+                   <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: ribbonColor, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+                     <Text style={{ color: theme.colors.ribbonText, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>{ribbonText}</Text>
+                   </View>
+                 );
+               })()}
+              <View style={styles.modalFloatingHeader}>
+                <TouchableOpacity style={styles.closeBtn} onPress={() => { smoothLayoutAnimation(); setSelectedMovie(null); }}>
+                  <X size={24} color={theme.colors.text} />
+                </TouchableOpacity>
+              </View>
               
               <View style={{ paddingTop: Dimensions.get('window').height * 0.45, paddingHorizontal: 24 }}>
                  <Text style={styles.modalTitle} numberOfLines={3}>{selectedMovie.title}</Text>
