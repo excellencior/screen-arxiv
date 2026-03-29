@@ -39,6 +39,46 @@ const FONT_REGULAR = { fontFamily: 'Open Sans', fontWeight: '500' as const, lett
 const FONT_BOLD = { fontFamily: 'Open Sans', fontWeight: '800' as const, letterSpacing: 1.0 };
 const { width } = Dimensions.get('window');
 
+const MarqueeTitle = ({ title, style }: { title: string; style: any }) => {
+  const translateX = React.useRef(new Animated.Value(0)).current;
+  const [containerW, setContainerW] = React.useState(0);
+  const [textW, setTextW] = React.useState(0);
+
+  React.useEffect(() => {
+    translateX.setValue(0);
+    if (textW > containerW && containerW > 0) {
+      const distance = textW - containerW;
+      const anim = Animated.loop(
+        Animated.sequence([
+          Animated.delay(1000),
+          Animated.timing(translateX, { toValue: -distance, duration: distance * 15, useNativeDriver: false }),
+          Animated.delay(500),
+          Animated.timing(translateX, { toValue: 0, duration: 0, useNativeDriver: false }),
+        ])
+      );
+      anim.start();
+      return () => anim.stop();
+    }
+  }, [textW, containerW, title]);
+
+  return (
+    <View style={{ overflow: 'hidden', marginBottom: 8 }} onLayout={(e) => setContainerW(e.nativeEvent.layout.width)}>
+      <Animated.View style={{ transform: [{ translateX }], alignSelf: 'flex-start' }}>
+        <Text 
+          style={style}
+          numberOfLines={1}
+          onTextLayout={(e: any) => {
+            const lineW = e.nativeEvent?.lines?.[0]?.width;
+            if (lineW && lineW > 0) setTextW(lineW);
+          }}
+        >
+          {title}
+        </Text>
+      </Animated.View>
+    </View>
+  );
+};
+
 export default function MoviesScreen({ navigation }: any) {
   const { theme, isDarkMode } = useAppTheme(); // Consuming useAppTheme
   const styles = useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]); // Dynamic styles
@@ -267,9 +307,7 @@ export default function MoviesScreen({ navigation }: any) {
               
               {/* Title + Meta — positioned at bottom of dark backdrop area */}
               <View style={{ paddingTop: Dimensions.get('window').height * 0.35, paddingHorizontal: 24, paddingBottom: 16 }}>
-                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
-                   <Text style={[styles.modalTitle, { flexShrink: 0 }]}>{selectedMovie.title}</Text>
-                 </ScrollView>
+                 <MarqueeTitle title={selectedMovie.title} style={styles.modalTitle} key={selectedMovie.id} />
                  <Text style={styles.modalMeta}>
                     {selectedMovie.year}   •   {selectedMovie.runtime ? `${Math.floor(selectedMovie.runtime / 60)}h ${selectedMovie.runtime % 60}m` : '? min'}
                  </Text>
