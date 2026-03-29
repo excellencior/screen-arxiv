@@ -14,7 +14,7 @@ export default function BackupScreen() {
   const { theme, isDarkMode } = useAppTheme();
   const styles = useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
 
-  const handleRestore = () => {
+  const handleRestore = async () => {
     if (Platform.OS === 'web') {
       // @ts-ignore
       const input = document.createElement('input');
@@ -41,7 +41,35 @@ export default function BackupScreen() {
       };
       input.click();
     } else {
-      Toast.show({ type: 'error', text1: 'System Unavailable', text2: 'Direct file restoration is currently only supported on Web architectures.' });
+      // Native Android/iOS: use document picker
+      try {
+        const DocumentPicker = require('expo-document-picker');
+        const FileSystem = require('expo-file-system');
+        const result = await DocumentPicker.getDocumentAsync({
+          type: 'application/json',
+          copyToCacheDirectory: true,
+        });
+
+        if (result.canceled || !result.assets || result.assets.length === 0) return;
+
+        const fileUri = result.assets[0].uri;
+        const content = await FileSystem.readAsStringAsync(fileUri);
+        const data = JSON.parse(content);
+
+        if (data.movies && data.shows) {
+          importData(data.movies, data.shows);
+          Toast.show({ type: 'success', text1: 'Restored Successfully', text2: `Imported ${data.movies.length} movies and ${data.shows.length} series.` });
+        } else {
+          throw new Error('Invalid Backup Format');
+        }
+      } catch (e: any) {
+        if (e?.message === 'Invalid Backup Format') {
+          Toast.show({ type: 'error', text1: 'Restore Failed', text2: 'The file is not a valid ScreenArxiv JSON backup.' });
+        } else {
+          console.log('Restore error', e);
+          Toast.show({ type: 'error', text1: 'Restore Failed', text2: 'Could not read the selected file.' });
+        }
+      }
     }
   };
 
@@ -64,8 +92,22 @@ export default function BackupScreen() {
          URL.revokeObjectURL(url);
          Toast.show({ type: 'success', text1: 'Backup Downloaded', text2: 'Your vault status was successfully encrypted to disk.' });
       } else {
-         console.log('Exported Data JSON:\n', json);
-         Toast.show({ type: 'success', text1: 'Exported', text2: 'Library data written securely to console pipeline.' });
+         // Native Android/iOS: write to temp file and share
+         const FileSystem = require('expo-file-system');
+         const Sharing = require('expo-sharing');
+         const fileName = `ScreenArxiv_Backup_${new Date().toISOString().split('T')[0]}.json`;
+         const fileUri = FileSystem.documentDirectory + fileName;
+         await FileSystem.writeAsStringAsync(fileUri, json, { encoding: FileSystem.EncodingType.UTF8 });
+
+         if (await Sharing.isAvailableAsync()) {
+           await Sharing.shareAsync(fileUri, {
+             mimeType: 'application/json',
+             dialogTitle: 'Save ScreenArxiv Backup',
+           });
+           Toast.show({ type: 'success', text1: 'Backup Shared', text2: 'Your vault backup is ready to save.' });
+         } else {
+           Toast.show({ type: 'error', text1: 'Sharing Unavailable', text2: 'Your device does not support file sharing.' });
+         }
       }
     } catch(e) {
       console.log('Export error', e);
