@@ -32,7 +32,7 @@ const AnimatedPill = ({ title, isActive, activeColor, onSelect }: any) => {
     <TouchableOpacity activeOpacity={0.8} onPress={handlePress} style={{flex: 1}}>
       <Animated.View style={[
         styles.pillBtnPrimary, 
-        { paddingVertical: 12, borderRadius: 24, paddingHorizontal: 0 }, 
+        { paddingVertical: 8, borderRadius: 24, paddingHorizontal: 0 }, 
         isActive ? { backgroundColor: activeColor } : { backgroundColor: theme.colors.surfaceHighlight },
         { transform: [{ scale }] }
       ]}>
@@ -528,7 +528,7 @@ export default function TVScreen({ navigation }: any) {
                       const watchedStatus = selectedShow.progress?.watched || 0;
                       const isFullyWatchedShow = totalStatus > 0 && watchedStatus >= totalStatus;
                       return (
-                        <TouchableOpacity style={[styles.pillBtnPrimary, { flex: 1, justifyContent: 'center', backgroundColor: isFullyWatchedShow ? theme.colors.surfaceHighlight : theme.colors.ribbonWatched, marginLeft: selectedShow.trailer ? 12 : 0 }]} onPress={handleMarkAllSeasonsWatched} activeOpacity={0.8}>
+                        <TouchableOpacity disabled={isFullyWatchedShow} style={[styles.pillBtnPrimary, { flex: 1, justifyContent: 'center', backgroundColor: isFullyWatchedShow ? theme.colors.surfaceHighlight : theme.colors.ribbonWatched, marginLeft: selectedShow.trailer ? 12 : 0, opacity: isFullyWatchedShow ? 0.8 : 1 }]} onPress={handleMarkAllSeasonsWatched} activeOpacity={0.8}>
                            <Check size={20} color={isFullyWatchedShow ? theme.colors.ribbonWatched : '#FFFFFF'} />
                            <Text style={[styles.pillBtnPrimaryText, { marginLeft: 8, color: isFullyWatchedShow ? theme.colors.textSecondary : '#FFFFFF' }]}>{isFullyWatchedShow ? 'WATCHED' : 'Mark All Seen'}</Text>
                         </TouchableOpacity>
@@ -787,7 +787,7 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   scrollContent: { padding: 16, paddingBottom: 40 },
   emptyState: { alignItems: 'center', marginTop: 100 },
   emptyText: { color: theme.colors.textSecondary, ...FONT_BOLD, marginBottom: 24 },
-  actionButton: { backgroundColor: theme.colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 4 },
+  actionButton: { backgroundColor: theme.colors.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 4 },
   actionButtonText: { color: theme.colors.background, ...FONT_BOLD },
   
   yearSection: { marginBottom: 32 },
@@ -805,9 +805,9 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   modalMeta: { fontSize: 13, color: 'rgba(255,255,255,0.9)', ...FONT_BOLD, textTransform: 'uppercase', letterSpacing: 1, textShadow: '0px 1px 10px rgba(0,0,0,0.8)' } as any,
   
   modalActionButtons: { flexDirection: 'row', gap: 12, marginTop: 24, paddingHorizontal: 24, paddingBottom: 24 },
-  pillBtnPrimary: { flex: 1, backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, paddingHorizontal: 20, borderRadius: 8 },
-  pillBtnPrimaryText: { color: theme.colors.primaryText, ...FONT_BOLD, fontSize: 15, marginLeft: 8 },
-  pillBtnDanger: { backgroundColor: theme.colors.danger + '22', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.danger },
+  pillBtnPrimary: { flex: 1, backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
+  pillBtnPrimaryText: { color: theme.colors.primaryText, ...FONT_BOLD, fontSize: 13, marginLeft: 8 },
+  pillBtnDanger: { backgroundColor: theme.colors.danger + '22', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.danger },
   
   modalContentCore: { backgroundColor: theme.colors.background, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   summarySection: { marginBottom: 32 },

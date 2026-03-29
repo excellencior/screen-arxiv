@@ -283,9 +283,9 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   modalContent: { width: '100%', maxWidth: 400, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 24, borderWidth: 1, borderColor: theme.colors.border },
   modalHeader: { color: theme.colors.text, fontSize: 18, ...FONT_BOLD, marginBottom: 8, textAlign: 'center' },
   modalInstruction: { color: theme.colors.textSecondary, fontSize: 12, ...FONT_REGULAR, textAlign: 'center' },
-  statusOption: { paddingVertical: 14, borderWidth: 1, borderRadius: 8, backgroundColor: theme.colors.background, alignItems: 'center' },
+  statusOption: { paddingVertical: 8, borderWidth: 1, borderRadius: 8, backgroundColor: theme.colors.background, alignItems: 'center' },
   statusOptionText: { color: theme.colors.text, ...FONT_BOLD, fontSize: 14 },
-  cancelButton: { marginTop: 16, paddingVertical: 14, backgroundColor: theme.colors.surfaceSelected, borderRadius: 8, alignItems: 'center' },
+  cancelButton: { marginTop: 16, paddingVertical: 8, backgroundColor: theme.colors.surfaceSelected, borderRadius: 8, alignItems: 'center' },
   cancelButtonText: { color: theme.colors.textSecondary, ...FONT_BOLD, fontSize: 14 },
   
   detailsModalContainer: { flex: 1, backgroundColor: theme.colors.background },

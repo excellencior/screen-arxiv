@@ -139,11 +139,11 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   exportCard: { backgroundColor: theme.colors.surface, padding: 24, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border },
   exportTitle: { color: theme.colors.text, ...FONT_BOLD, fontSize: 18, marginBottom: 8 },
   exportSub: { color: theme.colors.textSecondary, ...FONT_REGULAR, fontSize: 13, lineHeight: 20 },
-  exportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.primary, paddingVertical: 14, borderRadius: 8 },
+  exportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.primary, paddingVertical: 8, borderRadius: 8 },
   exportBtnText: { color: theme.colors.primaryText, ...FONT_BOLD, fontSize: 13, letterSpacing: 1 },
 
   // Restore 
   restoreCard: { backgroundColor: theme.colors.surfaceHighlight, padding: 24, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border },
-  restoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surfaceSelected, paddingVertical: 14, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.border },
+  restoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surfaceSelected, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.border },
   restoreBtnText: { color: theme.colors.text, ...FONT_BOLD, fontSize: 13, letterSpacing: 1 },
 });
