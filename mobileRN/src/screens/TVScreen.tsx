@@ -1,7 +1,7 @@
 declare var window: any;
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Platform, ImageBackground, Linking, ActivityIndicator, Dimensions, Animated } from 'react-native';
-import { Tv, Play, Check, X, RefreshCw, ChevronLeft, Trash2, ShieldAlert, CheckSquare, Plus } from 'lucide-react-native';
+import { Tv, Play, Check, X, RefreshCw, ChevronLeft, Trash2, ShieldAlert, CheckSquare, Plus, Clock } from 'lucide-react-native';
 import { useLibrary } from '../context/LibraryContext';
 import { FadeInUp, smoothLayoutAnimation, springLayoutAnimation } from '../utils/animations';
 import { fetchTVDetails, fetchTVSeason } from '../services/tmdb';
@@ -458,17 +458,52 @@ export default function TVScreen({ navigation }: any) {
             </View>
 
             <ScrollView key={selectedSeason === null ? "show" : `season-${selectedSeason}`} contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
-              {/* TOP LEFT WATCHED RIBBON - scrolls with content */}
+              {/* TOP LEFT STATUS RIBBON - scrolls with content */}
               {(() => {
-                const total = selectedShow.progress?.total || selectedShow.total_episodes || 0;
-                const watched = selectedShow.progress?.watched || 0;
-                const isFullyWatchedShow = selectedSeason === null && total > 0 && watched >= total;
-                const isFullyWatchedSeason = selectedSeason !== null && activeSeason?.episodes?.length > 0 && activeSeason.episodes.every((ep:any) => ep.status === 'WATCHED');
+                let ribbonStatus: string | null = null;
+                let ribbonColor = '';
                 
-                if (isFullyWatchedShow || isFullyWatchedSeason) {
+                if (selectedSeason !== null && activeSeason?.episodes?.length > 0) {
+                  // Season-level: derive status from episode statuses
+                  const eps = activeSeason.episodes;
+                  const allWatched = eps.every((ep: any) => ep.status === 'WATCHED');
+                  const allWillWatch = eps.every((ep: any) => !ep.status || ep.status === 'WILL WATCH');
+                  const hasWatching = eps.some((ep: any) => ep.status === 'WATCHING');
+                  const hasWatched = eps.some((ep: any) => ep.status === 'WATCHED');
+                  
+                  if (allWatched) {
+                    ribbonStatus = 'WATCHED';
+                    ribbonColor = theme.colors.ribbonWatched;
+                  } else if (hasWatching || hasWatched) {
+                    ribbonStatus = 'WATCHING';
+                    ribbonColor = theme.colors.ribbonWatching;
+                  } else if (allWillWatch) {
+                    ribbonStatus = 'WAITLIST';
+                    ribbonColor = theme.colors.ribbonWaitlist;
+                  }
+                } else if (selectedSeason === null) {
+                  // Show-level: use show status
+                  const total = selectedShow.progress?.total || selectedShow.total_episodes || 0;
+                  const watched = selectedShow.progress?.watched || 0;
+                  const isFullyWatched = total > 0 && watched >= total;
+                  const showStatus = selectedShow.status;
+                  
+                  if (isFullyWatched || showStatus === 'WATCHED' || showStatus === 'DONE') {
+                    ribbonStatus = 'WATCHED';
+                    ribbonColor = theme.colors.ribbonWatched;
+                  } else if (showStatus === 'WATCHING') {
+                    ribbonStatus = 'WATCHING';
+                    ribbonColor = theme.colors.ribbonWatching;
+                  } else if (showStatus === 'WILL WATCH') {
+                    ribbonStatus = 'WAITLIST';
+                    ribbonColor = theme.colors.ribbonWaitlist;
+                  }
+                }
+                
+                if (ribbonStatus) {
                   return (
-                    <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: theme.colors.ribbonWatched, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-                      <Text style={{ color: theme.colors.background, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>WATCHED</Text>
+                    <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 44 : 28, left: -40, backgroundColor: ribbonColor, width: 140, height: 26, transform: [{ rotate: '-45deg' }], alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+                      <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' }}>{ribbonStatus}</Text>
                     </View>
                   );
                 }
@@ -611,7 +646,7 @@ export default function TVScreen({ navigation }: any) {
                            const eps = activeSeason?.episodes || [];
                            const allWatched = eps.length > 0 && eps.every((ep: any) => ep.status === 'WATCHED');
                            return (
-                             <TouchableOpacity style={[styles.pillBtnPrimary, { backgroundColor: allWatched ? theme.colors.surfaceHighlight : theme.colors.ribbonWatched, flex: 0, paddingHorizontal: 28, alignSelf: 'flex-start', borderRadius: 24 }]} onPress={handleMarkAllWatched} activeOpacity={0.8}>
+                             <TouchableOpacity style={[styles.pillBtnPrimary, { backgroundColor: allWatched ? theme.colors.surfaceHighlight : theme.colors.ribbonWatched, flex: 0, paddingVertical: 12, paddingHorizontal: 28, alignSelf: 'flex-start', borderRadius: 24 }]} onPress={handleMarkAllWatched} activeOpacity={0.8}>
                                <Check size={16} color={allWatched ? theme.colors.ribbonWatched : theme.colors.background} />
                                <Text style={[styles.pillBtnPrimaryText, { color: allWatched ? theme.colors.textSecondary : theme.colors.background }]}>{allWatched ? 'WATCHED' : 'MARK COMPLETED'}</Text>
                              </TouchableOpacity>
@@ -631,10 +666,18 @@ export default function TVScreen({ navigation }: any) {
                              <Text style={{ color: theme.colors.textSecondary, ...FONT_REGULAR, fontSize: 13 }}>{ep.date || 'TBA'}  •  {ep.runtime ? `${ep.runtime}m` : '??m'}</Text>
                           </View>
                           
-                          {/* Subtle Status Icon Instead of Huge Buttons */}
-                          {ep.status === 'WATCHED' && (
+                          {/* Status Icon */}
+                          {ep.status === 'WATCHED' ? (
                              <View style={{ backgroundColor: theme.colors.ribbonWatched + '22', width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' }}>
                                <Check size={16} color={theme.colors.ribbonWatched} />
+                             </View>
+                          ) : ep.status === 'WATCHING' ? (
+                             <View style={{ backgroundColor: theme.colors.ribbonWatching + '22', width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' }}>
+                               <Play size={14} color={theme.colors.ribbonWatching} />
+                             </View>
+                          ) : (
+                             <View style={{ backgroundColor: theme.colors.ribbonWaitlist + '18', width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' }}>
+                               <Clock size={14} color={theme.colors.ribbonWaitlist} />
                              </View>
                           )}
                         </TouchableOpacity>
@@ -804,7 +847,7 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   modalTitle: { fontSize: 38, color: '#FFFFFF', ...FONT_BOLD, marginBottom: 8, lineHeight: 42, textShadow: '0px 2px 15px rgba(0,0,0,0.8)' } as any,
   modalMeta: { fontSize: 13, color: 'rgba(255,255,255,0.9)', ...FONT_BOLD, textTransform: 'uppercase', letterSpacing: 1, textShadow: '0px 1px 10px rgba(0,0,0,0.8)' } as any,
   
-  modalActionButtons: { flexDirection: 'row', gap: 12, marginTop: 24, paddingHorizontal: 24, paddingBottom: 24 },
+  modalActionButtons: { flexDirection: 'row', gap: 8, marginTop: 36, paddingHorizontal: 24, paddingBottom: 12 },
   pillBtnPrimary: { flex: 1, backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
   pillBtnPrimaryText: { color: theme.colors.primaryText, ...FONT_BOLD, fontSize: 13, marginLeft: 8 },
   pillBtnDanger: { backgroundColor: theme.colors.danger + '22', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.danger },

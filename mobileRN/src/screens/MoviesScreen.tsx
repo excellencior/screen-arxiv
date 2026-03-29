@@ -416,7 +416,7 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   modalTitle: { fontSize: 38, color: theme.colors.text, ...FONT_BOLD, marginBottom: 8, lineHeight: 42, textShadowColor: isDarkMode ? 'rgba(0,0,0,0.8)' : 'transparent', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 15 } as any,
   modalMeta: { fontSize: 13, color: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.9)', ...FONT_BOLD, textTransform: 'uppercase', letterSpacing: 1, textShadowColor: isDarkMode ? 'rgba(0,0,0,0.8)' : 'transparent', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 10 } as any,
   
-  modalActionButtons: { flexDirection: 'row', gap: 12, marginTop: 24, paddingHorizontal: 24, paddingBottom: 24 },
+  modalActionButtons: { flexDirection: 'row', gap: 8, marginTop: 36, paddingHorizontal: 24, paddingBottom: 12 },
   pillBtnPrimary: { flex: 1, backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: 8 },
   pillBtnPrimaryText: { color: theme.colors.primaryText, ...FONT_BOLD, fontSize: 13, marginLeft: 8 },
   pillBtnDanger: { backgroundColor: theme.colors.danger + '22', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.danger },
