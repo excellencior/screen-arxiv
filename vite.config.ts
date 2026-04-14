@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
   return {
-    base: '/screen-arxiv/',
+    base: './',
 
     plugins: [react(), tailwindcss()],
 
@@ -19,6 +19,9 @@ export default defineConfig(({ mode }) => {
 
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
+    },
+    optimizeDeps: {
+      entries: ['index.html'],
     },
   };
 });

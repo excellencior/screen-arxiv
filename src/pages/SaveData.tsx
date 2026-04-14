@@ -3,6 +3,9 @@ import { Container, Button, Card, Form, Spinner } from 'react-bootstrap';
 import { Download, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
 import * as fflate from 'fflate';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import toast from 'react-hot-toast';
 
 export default function SaveData() {
@@ -26,20 +29,62 @@ export default function SaveData() {
         });
       });
 
-      const blob = new Blob([zipped.buffer as ArrayBuffer], { type: 'application/zip' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `screen_arxiv_backup_${new Date().toISOString().split('T')[0]}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const fileName = `screen_arxiv_backup_${new Date().toISOString().split('T')[0]}.zip`;
+
+      if (Capacitor.isNativePlatform()) {
+        // Handle Mobile Export
+        // Use zipped directly as Blob supports Uint8Array. Buffer might be larger than needed.
+        const blob = new Blob([zipped], { type: 'application/zip' });
+        
+        // Convert Blob to Base64 safely using FileReader
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            const commaIndex = result.indexOf(',');
+            if (commaIndex !== -1) {
+              resolve(result.substring(commaIndex + 1));
+            } else {
+              reject(new Error('Failed to parse base64 data'));
+            }
+          };
+          reader.onerror = () => reject(new Error('FileReader error'));
+          reader.readAsDataURL(blob);
+        });
+
+        const savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache,
+          recursive: true
+        });
+
+        await Share.share({
+          title: 'Library Backup',
+          text: 'Archive backup file',
+          files: [savedFile.uri],
+          dialogTitle: 'Save Backup'
+        });
+      } else {
+        // Handle Web Export
+        const blob = new Blob([zipped], { type: 'application/zip' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
       
-      toast.success('Backup exported successfully!', { icon: <CheckCircle2 size={16} className="text-success" /> });
-    } catch (e) {
-      console.error(e);
-      toast.error('Failed to export backup', { icon: <AlertCircle size={16} className="text-danger" /> });
+      toast.success('Backup exported successfully!');
+    } catch (e: any) {
+      console.error('Export error:', e);
+      toast.error(`Export failed: ${e.message || 'Unknown error'}`, { 
+        icon: <AlertCircle size={16} className="text-danger" />,
+        duration: 5000 
+      });
     } finally {
       setIsExporting(false);
     }

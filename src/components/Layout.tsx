@@ -1,16 +1,56 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Navbar, Container, Offcanvas, Nav, Button } from 'react-bootstrap';
-import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveDownload } from 'lucide-react';
+import { Navbar, Container, Offcanvas, Nav, Button, Dropdown } from 'react-bootstrap';
+import { Menu, Search, X, Film, Tv, Palette, Clapperboard, BarChart3, HardDriveDownload, MoreHorizontal } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { NavigationBar } from '@capgo/capacitor-navigation-bar';
+import { useBackButton } from '../context/BackButtonContext';
+
+const NAV_ITEMS = [
+	{ path: '/', label: 'Analytics', icon: BarChart3 },
+	{ path: '/movies', label: 'Movies', icon: Film },
+	{ path: '/tv', label: 'Series', icon: Tv },
+	{ path: '/search', label: 'Search', icon: Search },
+];
 
 export default function Layout() {
 	const [show, setShow] = useState(false);
 	const [theme, setTheme] = useState(() => localStorage.getItem('screen-arxiv-theme') || 'light');
 	const location = useLocation();
 
+	// Handle back button for the sidebar offcanvas
+	useBackButton(() => {
+		setShow(false);
+		return true;
+	}, 15, show);
+
+	useEffect(() => {
+		if (Capacitor.isNativePlatform()) {
+			StatusBar.setOverlaysWebView({ overlay: true });
+		}
+	}, []);
+
 	useEffect(() => {
 		document.documentElement.setAttribute('data-bs-theme', theme);
 		localStorage.setItem('screen-arxiv-theme', theme);
+
+		// Sync Android system bars with theme
+		if (Capacitor.isNativePlatform()) {
+			const updateBars = async () => {
+				// Wait slightly for splash screen transition to complete
+				await new Promise(resolve => setTimeout(resolve, 200));
+				if (theme === 'dark') {
+					await StatusBar.setStyle({ style: Style.Dark });
+					await NavigationBar.setNavigationBarColor({ color: '#191919', darkButtons: false });
+				} else {
+					await StatusBar.setStyle({ style: Style.Light });
+					await NavigationBar.setNavigationBarColor({ color: '#f5f5f5', darkButtons: true });
+				}
+			};
+			updateBars();
+		}
 	}, [theme]);
 
 	const handleClose = () => setShow(false);
@@ -21,27 +61,54 @@ export default function Layout() {
 	};
 
 	return (
-		<div className="d-flex flex-column min-vh-100">
-			<Navbar bg="body" className="border-bottom sticky-top" style={{ height: '56px' }}>
+		<div className="d-flex flex-column h-100 overflow-hidden">
+			<Navbar bg="body" className="border-bottom top-navbar" style={{ height: 'calc(45px + env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1040 }}>
 				<Container fluid className="px-3">
-					<div className="d-flex align-items-center gap-3">
-						<Button variant="link" className="p-0 text-body" onClick={handleShow}>
-							<Menu size={20} />
+					<div className="d-flex align-items-center gap-2">
+						{/* Hamburger — desktop only */}
+						<Button variant="link" className="p-0 text-body d-none d-md-flex" onClick={handleShow}>
+							<Menu size={18} strokeWidth={1.75} />
 						</Button>
-						<Navbar.Brand className="m-0 p-0 fw-medium fs-6 font-mono tracking-tight">
+						<Navbar.Brand className="m-0 p-0 fw-medium font-mono tracking-tight d-flex align-items-center gap-2" style={{ fontSize: '14px' }}>
+							<img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="Logo" style={{ width: '16px', height: '16px' }} />
 							Screen Arxiv
 						</Navbar.Brand>
 					</div>
-					<div className="d-flex align-items-center">
-						<Button variant="outline-secondary" className="rounded p-1 d-flex align-items-center justify-content-center border-0 bg-primary bg-opacity-10 text-primary" style={{ width: '32px', height: '32px' }}>
-							<Clapperboard size={16} />
+					<div className="d-flex align-items-center gap-1">
+						{/* Dropdown Menu — mobile top bar */}
+						<Dropdown align="end" className="d-flex d-md-none">
+							<Dropdown.Toggle
+								variant="link"
+								className="p-0 text-body d-flex align-items-center justify-content-center top-bar-icon border-0"
+								style={{ width: '28px', height: '28px' }}
+							>
+								<MoreHorizontal size={16} strokeWidth={1.75} />
+							</Dropdown.Toggle>
+
+							<Dropdown.Menu className="shadow-sm border-0 custom-dropdown-menu" style={{ minWidth: '160px', borderRadius: '8px', margin: '8px 0 0 0' }}>
+								<Dropdown.Item onClick={toggleTheme} className="d-flex align-items-center gap-2 py-2 px-3">
+									<Palette size={14} className={theme === 'dark' ? 'text-secondary' : 'text-body'} />
+									<span className="font-mono text-body" style={{ fontSize: '11px' }}>Toggle Theme</span>
+								</Dropdown.Item>
+								<Dropdown.Item as={Link} to="/save-data" className="d-flex align-items-center gap-2 py-2 px-3">
+									<HardDriveDownload size={14} className={location.pathname === '/save-data' ? 'text-primary' : 'text-body'} />
+									<span className="font-mono text-body" style={{ fontSize: '11px' }}>Save Data</span>
+								</Dropdown.Item>
+							</Dropdown.Menu>
+						</Dropdown>
+						{/* Desktop clapperboard icon */}
+						<Button variant="outline-secondary" className="rounded p-1 d-none d-md-flex align-items-center justify-content-center border-0 bg-primary bg-opacity-10 text-primary" style={{ width: '28px', height: '28px' }}>
+							<Clapperboard size={14} strokeWidth={1.75} />
 						</Button>
 					</div>
 				</Container>
 			</Navbar>
+			{/* Spacer for fixed navbar */}
+			<div style={{ height: 'calc(45px + env(safe-area-inset-top, 0px))', flexShrink: 0 }} />
 
+			{/* Offcanvas — desktop only */}
 			<Offcanvas show={show} onHide={handleClose} placement="start" className="border-end-0 m-3 rounded-4 shadow-lg custom-offcanvas" style={{ width: '260px', height: 'auto', maxHeight: 'calc(100dvh - 2rem)' }}>
-				<Offcanvas.Header className="pb-0 pt-3 px-3 align-items-start">
+				<Offcanvas.Header className="pb-0 px-3 align-items-start" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
 					<div>
 						<div className="text-secondary fw-bold text-uppercase mb-1 font-mono" style={{ fontSize: '10px', letterSpacing: '0.05em' }}>Archive</div>
 						<Offcanvas.Title className="fw-medium font-mono fs-6 text-body">Screen Arxiv</Offcanvas.Title>
@@ -91,9 +158,33 @@ export default function Layout() {
 				</Offcanvas.Body>
 			</Offcanvas>
 
-			<main className={`flex-grow-1 app-content ${show ? 'blur-active' : ''}`}>
-				<Outlet />
+			<main className={`flex-grow-1 overflow-y-auto app-content ${show ? 'blur-active' : ''}`} style={{ minHeight: 0 }}>
+				<motion.div
+					key={location.pathname}
+					initial={{ opacity: 0, y: 15 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+				>
+					<Outlet />
+				</motion.div>
 			</main>
+
+			{/* Bottom bar — mobile only */}
+			<nav className="bottom-nav d-flex d-md-none">
+				{NAV_ITEMS.map(({ path, label, icon: Icon }) => {
+					const isActive = location.pathname === path;
+					return (
+						<Link
+							key={path}
+							to={path}
+							className={`bottom-nav-item ${isActive ? 'active' : ''}`}
+						>
+							<Icon size={18} strokeWidth={isActive ? 2 : 1.5} />
+							<span className="bottom-nav-label">{label}</span>
+						</Link>
+					);
+				})}
+			</nav>
 		</div>
 	);
 }
