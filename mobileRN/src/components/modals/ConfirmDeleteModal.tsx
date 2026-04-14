@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, Platform } from 'react-native';
-import { PolestarTheme } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const FONT_REGULAR = { fontFamily: 'Open Sans', fontWeight: '500' as const, letterSpacing: 0.5 };
-const FONT_BOLD = { fontFamily: Platform.OS === 'ios' ? 'Avenir' : 'serif', fontWeight: '600' as const, letterSpacing: 0.5 };
+const FONT_BOLD = { fontFamily: 'Open Sans', fontWeight: '800' as const, letterSpacing: 1.0 };
 
 interface ConfirmDeleteModalProps {
   visible: boolean;
@@ -24,18 +24,20 @@ export default function ConfirmDeleteModal({
   confirmLabel = 'Delete',
   cancelLabel = 'Cancel'
 }: ConfirmDeleteModalProps) {
+  const { theme } = useAppTheme();
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onHide}>
       <View style={styles.overlay}>
-        <View style={styles.dialog}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+        <View style={[styles.dialog, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
+          <Text style={[styles.message, { color: theme.colors.textSecondary }]}>{message}</Text>
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onHide}>
-              <Text style={styles.cancelText}>{cancelLabel}</Text>
+            <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: theme.colors.surfaceHighlight }]} onPress={onHide}>
+              <Text style={[styles.cancelText, { color: theme.colors.text }]}>{cancelLabel}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.confirmBtn} onPress={onConfirm}>
-              <Text style={styles.confirmText}>{confirmLabel}</Text>
+            <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: theme.colors.danger + '22' }]} onPress={onConfirm}>
+              <Text style={[styles.confirmText, { color: theme.colors.danger }]}>{confirmLabel}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -55,20 +57,16 @@ const styles = StyleSheet.create({
   dialog: {
     width: '100%',
     maxWidth: 400,
-    backgroundColor: PolestarTheme.colors.surface,
     borderRadius: 12,
     padding: 24,
     borderWidth: 1,
-    borderColor: PolestarTheme.colors.border
   },
   title: {
-    color: '#FFF',
     fontSize: 20,
     ...FONT_BOLD,
     marginBottom: 12
   },
   message: {
-    color: 'rgba(255,255,255,0.7)',
     fontSize: 15,
     ...FONT_REGULAR,
     lineHeight: 22,
@@ -83,10 +81,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)'
   },
   cancelText: {
-    color: '#FFF',
     ...FONT_BOLD,
     fontSize: 14
   },
@@ -94,10 +90,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,68,68,0.2)'
   },
   confirmText: {
-    color: '#ff4444',
     ...FONT_BOLD,
     fontSize: 14
   }

@@ -1,12 +1,11 @@
-import React from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LayoutGrid, Film, Tv, Search, HardDrive } from 'lucide-react-native';
-import { View, Text, StyleSheet, StatusBar, Platform, TouchableOpacity, Animated, Pressable, Dimensions, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, Platform, TouchableOpacity, Animated, Pressable, Dimensions } from 'react-native';
 
 import { useAppTheme } from '../context/ThemeContext';
-import { useSwipeGesture } from '../hooks/useSwipeGesture';
+import SwipeableTabView from '../components/SwipeableTabView';
 
 import MoviesScreen from '../screens/MoviesScreen';
 import TVScreen from '../screens/TVScreen';
@@ -14,14 +13,28 @@ import SearchScreen from '../screens/SearchScreen';
 import AnalyticsScreen from '../screens/AnalyticsScreen';
 import BackupScreen from '../screens/BackupScreen';
 
-const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// Dynamic styles derived inside component via useAppTheme
+const TAB_NAMES = ['Analytics', 'Movies', 'Series', 'Search', 'Backup'];
+const TAB_ICONS = [
+  { name: 'Analytics', Icon: LayoutGrid },
+  { name: 'Movies', Icon: Film },
+  { name: 'Series', Icon: Tv },
+  { name: 'Search', Icon: Search },
+  { name: 'Backup', Icon: HardDrive },
+];
 
-// Global Header explicitly removed to allow edge-to-edge content on screens
-
-function FloatingTabBar({ state, descriptors, navigation }: any) {
+/**
+ * FloatingTabBar — Custom tab bar with theme toggle accordion.
+ * Receives activeIndex + onTabPress for synchronized navigation.
+ */
+function FloatingTabBar({ 
+  activeIndex, 
+  onTabPress 
+}: { 
+  activeIndex: number; 
+  onTabPress: (index: number) => void;
+}) {
   const { theme, isDarkMode, toggleTheme } = useAppTheme();
   const [showAccordion, setShowAccordion] = React.useState(false);
   const accordionHeight = React.useRef(new Animated.Value(0)).current;
@@ -63,28 +76,19 @@ function FloatingTabBar({ state, descriptors, navigation }: any) {
         )}
       </Animated.View>
 
-      {state.routes.map((route: any, index: number) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
-
-        const onPress = () => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!isFocused && !event.defaultPrevented) { navigation.navigate(route.name); }
-        };
-
-        const onLongPress = () => toggleAccordion();
-
+      {TAB_ICONS.map((tab, index) => {
+        const isFocused = activeIndex === index;
         const color = isFocused ? theme.colors.primary : theme.colors.navbarItem;
-        let IconComponent = null;
-
-        if (route.name === 'Analytics') IconComponent = <LayoutGrid size={24} color={color} strokeWidth={isFocused ? 2 : 1.5} />;
-        if (route.name === 'Movies') IconComponent = <Film size={24} color={color} strokeWidth={isFocused ? 2 : 1.5} />;
-        if (route.name === 'Series') IconComponent = <Tv size={24} color={color} strokeWidth={isFocused ? 2 : 1.5} />;
-        if (route.name === 'Search') IconComponent = <Search size={24} color={color} strokeWidth={isFocused ? 2 : 1.5} />;
-        if (route.name === 'Backup') IconComponent = <HardDrive size={24} color={color} strokeWidth={isFocused ? 2 : 1.5} />;
+        const IconComponent = <tab.Icon size={24} color={color} strokeWidth={isFocused ? 2 : 1.5} />;
 
         return (
-          <TouchableOpacity key={route.key} activeOpacity={0.8} onPress={onPress} onLongPress={onLongPress} style={styles.tabBarItem}>
+          <TouchableOpacity 
+            key={tab.name} 
+            activeOpacity={0.8} 
+            onPress={() => onTabPress(index)}
+            onLongPress={() => toggleAccordion()} 
+            style={styles.tabBarItem}
+          >
             {IconComponent}
           </TouchableOpacity>
         );
@@ -93,54 +97,43 @@ function FloatingTabBar({ state, descriptors, navigation }: any) {
   );
 }
 
-const TAB_NAMES = ['Analytics', 'Movies', 'Series', 'Search', 'Backup'];
-
+/**
+ * MainTabs — Renders all tab screens inside SwipeableTabView.
+ * Uses Gesture Handler + Reanimated for 60 FPS swipe navigation.
+ */
 function MainTabs() {
-  const slideAnim = React.useRef(new Animated.Value(0)).current;
-  const fadeAnim = React.useRef(new Animated.Value(1)).current;
-  const screenWidth = Dimensions.get('window').width;
-  const navigationRef = React.useRef<any>(null);
-  const isAnimating = React.useRef(false);
+  const { theme } = useAppTheme();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollToRef = useRef<((index: number) => void) | null>(null);
 
-  const animateAndNavigate = React.useCallback((direction: 'left' | 'right') => {
-    if (!navigationRef.current || isAnimating.current) return;
-    const nav = navigationRef.current;
-    const navState = nav.getState();
-    const targetIndex = direction === 'left' ? navState.index + 1 : navState.index - 1;
-    if (targetIndex < 0 || targetIndex >= TAB_NAMES.length) return;
+  const handleTabPress = useCallback((index: number) => {
+    if (scrollToRef.current) {
+      scrollToRef.current(index);
+    }
+    setActiveIndex(index);
+  }, []);
 
-    isAnimating.current = true;
-    const slideOut = direction === 'left' ? -screenWidth * 0.3 : screenWidth * 0.3;
-    Animated.parallel([
-      Animated.timing(slideAnim, { toValue: slideOut, duration: 150, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 0.2, duration: 150, useNativeDriver: true }),
-    ]).start(() => {
-      nav.navigate(TAB_NAMES[targetIndex]);
-      slideAnim.setValue(direction === 'left' ? screenWidth * 0.3 : -screenWidth * 0.3);
-      Animated.parallel([
-        Animated.spring(slideAnim, { toValue: 0, friction: 12, tension: 120, useNativeDriver: true }),
-        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-      ]).start(() => { isAnimating.current = false; });
-    });
-  }, [slideAnim, fadeAnim, screenWidth]);
-
-  const swipeHandlers = useSwipeGesture({
-    onSwipeLeft: () => animateAndNavigate('left'),
-    onSwipeRight: () => animateAndNavigate('right'),
-    threshold: 40,
-  });
+  const handlePageChange = useCallback((index: number) => {
+    setActiveIndex(index);
+  }, []);
 
   return (
-    <View style={{ flex: 1, overflow: 'hidden' }}>
-      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }], opacity: fadeAnim }} {...swipeHandlers}>
-        <Tab.Navigator tabBar={(props) => { navigationRef.current = props.navigation; return <FloatingTabBar {...props} />; }} screenOptions={{ headerShown: false }} initialRouteName="Analytics">
-          <Tab.Screen name="Analytics" component={AnalyticsScreen} />
-          <Tab.Screen name="Movies" component={MoviesScreen} />
-          <Tab.Screen name="Series" component={TVScreen} />
-          <Tab.Screen name="Search" component={SearchScreen} />
-          <Tab.Screen name="Backup" component={BackupScreen} />
-        </Tab.Navigator>
-      </Animated.View>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <SwipeableTabView
+        onPageChange={handlePageChange}
+        scrollToRef={scrollToRef}
+        showDots={true}
+        activeDotColor={theme.colors.primary}
+        inactiveDotColor={theme.colors.navbarItem + '44'}
+      >
+        <AnalyticsScreen {...{ navigation: { navigate: (name: string) => handleTabPress(TAB_NAMES.indexOf(name)) } } as any} />
+        <MoviesScreen navigation={{ navigate: (name: string) => handleTabPress(TAB_NAMES.indexOf(name)) }} />
+        <TVScreen navigation={{ navigate: (name: string) => handleTabPress(TAB_NAMES.indexOf(name)) }} />
+        <SearchScreen {...{ navigation: { navigate: (name: string) => handleTabPress(TAB_NAMES.indexOf(name)) } } as any} />
+        <BackupScreen {...{ navigation: { navigate: (name: string) => handleTabPress(TAB_NAMES.indexOf(name)) } } as any} />
+      </SwipeableTabView>
+
+      <FloatingTabBar activeIndex={activeIndex} onTabPress={handleTabPress} />
     </View>
   );
 }
@@ -191,3 +184,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   }
 });
+

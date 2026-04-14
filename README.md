@@ -1,4 +1,4 @@
-# Screen Arxiv 🎬
+# Screen Arxiv
 
 **Your Personal Archive for Movies and TV Series.**
 
@@ -6,50 +6,59 @@ Screen Arxiv is a premium media tracking application designed for those who want
 
 ---
 
-## ✨ Features
+## Download
 
-### 🎞️ Movie Tracking
-- **Cinematic Detail Modals** with full-bleed backdrop images, gradient fades, and floating typography.
-- **Trailer Integration** — watch trailers with a single tap.
-- **Segmented Status Control** — one-tap status changes between *Watched*, *Watching*, and *Waitlist*.
-- **Cast & Crew** — horizontal scrolling cast carousel with profile photos.
+**[Download the latest Android APK from GitHub Releases](https://github.com/excellencior/screen-arxiv/releases)**
 
-### 📺 TV Series & Episodes
-- **Season Management** — horizontal poster carousel for season navigation.
-- **Episode Tracking** — clean episode rows with tap-to-view detail modals.
-- **Deep-Linked Episode Details** — cinematic episode modals with status controls.
-- **Quick Actions** — mark entire seasons or the whole series as watched instantly.
-- **Progress Tracking** — visual progress bars showing watched vs. remaining episodes.
-
-### 📊 Insights & Analytics
-- **Library Overview** — total movies, series, and episode counts at a glance.
-- **Decade Distribution** — discover which eras of cinema you explore the most.
-- **Genre Breakdown** — identify your favorite genres through visual charts.
-
-### 🔍 Integrated Search
-- Powered by **TMDB**, find any movie or show in seconds.
-- **Quick Add** — add to your library instantly with auto-fetched metadata and posters.
-
-### 💾 Backup & Restore
-- **JSON Export** — download your entire library as a portable backup file.
-- **JSON Import** — restore from a backup with instant in-memory data loading (no restart required).
-
-### 🎨 Premium Experience
-- **Polestar-Inspired Aesthetic** — cinematic dark mode with editorial typography.
-- **Adaptive Theme** — dynamic Light and Dark modes with persistent preference.
-- **Status-Colored Filters** — color-coded filter pills matching watch status.
-- **Status Ribbons** — diagonal corner badges showing current watch status.
-- **Smooth Motion** — spring-based micro-animations on status changes and interactions.
-- **Back Button Navigation** — proper modal hierarchy navigation (Episode → Season → Show → List).
+> **Installation Note:** This app is built and signed locally and is not yet registered on Google Play. During installation, your device may display a security warning (e.g., "Install unknown apps" or Google Play Protect alerts). This is standard behavior for any app distributed outside the Play Store and does not indicate a security issue. Google Play registration is planned for a future release.
 
 ---
 
-## 🏗️ Project Structure
+## Features
+
+### Movie Tracking
+- Cinematic detail modals with full-bleed backdrop images, gradient fades, and floating typography
+- Integrated trailer playback with a single tap
+- Segmented status control for one-tap status changes between Watched, Watching, and Waitlist
+- Horizontal scrolling cast carousel with profile photos
+
+### TV Series and Episode Management
+- Season navigation through a horizontal poster carousel
+- Per-episode tracking with clean episode rows and tap-to-view detail modals
+- Cinematic episode detail modals with individual status controls
+- Quick actions to mark entire seasons or a full series as watched instantly
+- Visual progress bars showing watched vs. remaining episodes per season
+
+### Search and Discovery
+- Full-text search powered by TMDB for movies and TV shows
+- Quick Add to instantly add titles to your library with auto-fetched metadata and posters
+
+### Insights and Analytics
+- Library overview with total movie, series, and episode counts at a glance
+- Decade distribution chart to see which eras of cinema you explore most
+- Genre breakdown visualization to identify your favorite genres
+
+### Backup and Restore
+- JSON export to download your entire library as a portable backup file
+- JSON import to restore from a backup with instant in-memory data loading (no restart required)
+
+### User Experience
+- Polestar-inspired aesthetic with cinematic dark mode and editorial typography
+- Adaptive theming with dynamic Light and Dark modes and persistent preference
+- Status-colored filter pills matching watch status for quick filtering
+- Diagonal corner ribbons showing current watch status on posters
+- Spring-based micro-animations on status changes and interactions
+- Proper modal hierarchy navigation (Episode to Season to Show to List)
+- Gesture-based swipe navigation between tabs
+
+---
+
+## Project Structure
 
 ```
 screen-arxiv/
 ├── src/                    # Web app (React + Vite)
-│   ├── components/         # UI components & modals
+│   ├── components/         # UI components and modals
 │   ├── context/            # React context providers
 │   ├── pages/              # Page-level components
 │   └── services/           # TMDB API services
@@ -66,27 +75,34 @@ screen-arxiv/
 
 ---
 
-## 🛠️ Built With
+## Built With
 
 ### Web
-- **React** & **Vite** for a fast, responsive interface.
-- **Bootstrap** & **Vanilla CSS** for clean architectural styling.
-- **Framer Motion** for premium interactions and animations.
-- **Lucide React** for consistent, meaningful iconography.
+| Technology       | Purpose                                    |
+|------------------|--------------------------------------------|
+| React + Vite     | Fast, responsive interface                 |
+| Bootstrap        | Layout and component framework             |
+| Vanilla CSS      | Architectural styling and theming          |
+| Framer Motion    | Premium interactions and animations        |
+| Lucide React     | Consistent, meaningful iconography         |
 
 ### Mobile
-- **React Native 0.84** with **React Native Web** for cross-platform rendering.
-- **React Navigation** (Bottom Tabs) with a custom floating glassmorphic tab bar.
-- **AsyncStorage** for persistent local data.
-- **Lucide React Native** for iconography.
-- **React Native Toast Message** with theme-aware custom styling.
+| Technology                | Purpose                                    |
+|---------------------------|--------------------------------------------|
+| React Native 0.84         | Cross-platform mobile rendering           |
+| React Navigation           | Bottom tabs with custom glassmorphic bar  |
+| AsyncStorage               | Persistent local data storage             |
+| Lucide React Native        | Iconography                               |
+| React Native Toast Message | Theme-aware custom notifications          |
 
 ### Shared
-- **TMDB API** for a comprehensive global media database.
+| Technology | Purpose                              |
+|------------|--------------------------------------|
+| TMDB API   | Comprehensive global media database  |
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Web App
 
@@ -111,10 +127,10 @@ npm run web
 ### Mobile App (Android APK)
 
 #### Prerequisites
-- **Node.js** ≥ 22.11.0
+- **Node.js** v22.11.0 or later
 - **Java JDK 17** (required by React Native 0.84)
 - **Android SDK** with Build Tools, Platform Tools, and SDK Platform 35
-- Set `ANDROID_HOME` environment variable
+- `ANDROID_HOME` environment variable set
 
 #### Debug APK
 
@@ -152,4 +168,4 @@ android/app/build/outputs/apk/release/app-release.apk
 
 ---
 
-*Keep archiving. Keep watching.* 🍿
+*Keep archiving. Keep watching.*

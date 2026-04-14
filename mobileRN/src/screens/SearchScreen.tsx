@@ -4,6 +4,7 @@ import { Search as SearchIcon, X, Check, Plus } from 'lucide-react-native';
 import { useLibrary } from '../context/LibraryContext';
 import { FadeInUp } from '../utils/animations';
 import { searchMulti, fetchMovieDetails, fetchTVDetails } from '../services/tmdb';
+import CustomScrollView from '../components/CustomScrollView';
 import Toast from 'react-native-toast-message';
 import { useAppTheme } from '../context/ThemeContext';
 
@@ -89,8 +90,36 @@ export default function SearchScreen() {
     const existingItem = isMovie ? movies.find(m => m.id === item.id) : shows.find(s => s.id === item.id);
 
     if (existingItem) {
-      if (isMovie) updateMovie(item.id, { status, statusColor: color });
-      else updateShow(item.id, { status, statusColor: color });
+      if (isMovie) {
+        updateMovie(item.id, { status, statusColor: color });
+      } else {
+        // For TV shows, propagate status to all season episodes
+        const show = existingItem as any;
+        if (show.seasons?.length > 0 && status === 'WATCHED') {
+          const updatedSeasons = show.seasons.map((s: any) => ({
+            ...s,
+            status: 'WATCHED',
+            episodes: (s.episodes || []).map((ep: any) => ({ ...ep, status: 'WATCHED', statusColor: 'success' })),
+          }));
+          const total = updatedSeasons.reduce((acc: number, s: any) => acc + (s.episode_count || s.episodes?.length || 0), 0);
+          updateShow(item.id, { status, statusColor: color, seasons: updatedSeasons, progress: { watched: total, total } });
+        } else if (show.seasons?.length > 0 && status !== 'WATCHED') {
+          const updatedSeasons = show.seasons.map((s: any) => ({
+            ...s,
+            status: status === 'WATCHING' ? 'WATCHING' : 'WILL WATCH',
+            episodes: (s.episodes || []).map((ep: any) => ({ ...ep, status: 'WILL WATCH', statusColor: 'warning' })),
+          }));
+          updateShow(item.id, { status, statusColor: color, seasons: updatedSeasons, progress: { watched: 0, total: show.progress?.total || 0 } });
+        } else {
+          // Seasons not fetched yet — still update progress based on existing total
+          const total = show.progress?.total || show.total_episodes || 0;
+          if (status === 'WATCHED') {
+            updateShow(item.id, { status, statusColor: color, progress: { watched: total, total } });
+          } else {
+            updateShow(item.id, { status, statusColor: color, progress: { watched: 0, total } });
+          }
+        }
+      }
       Toast.show({ type: 'success', text1: 'Updated', text2: `${item.title || item.name} updated to ${status}` });
       return;
     }
@@ -106,7 +135,7 @@ export default function SearchScreen() {
       backdrop_path: item.backdrop_path || null,
       summary: item.overview,
       media_type: item.media_type,
-      ...(isMovie ? {} : { progress: { watched: 0, total: 10 }, number_of_seasons: 1, seasons: [], episodes: [] })
+      ...(isMovie ? {} : { progress: { watched: status === 'WATCHED' ? 10 : 0, total: 10 }, number_of_seasons: 1, seasons: [], episodes: [] })
     };
 
     if (isMovie) {
@@ -122,9 +151,11 @@ export default function SearchScreen() {
       addShow(newItem);
       const details = await fetchTVDetails(item.id);
       if (details) {
+        const totalEps = details.number_of_episodes || 10;
         updateShow(item.id, {
           number_of_seasons: details.number_of_seasons || details.seasons?.length || 1,
           cast: details.credits?.cast?.slice(0, 5).map((c: any) => ({ name: c.name, role: c.character, profile_path: c.profile_path })) || [],
+          progress: { watched: status === 'WATCHED' ? totalEps : 0, total: totalEps }
         });
       }
     }
@@ -159,7 +190,7 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <CustomScrollView contentContainerStyle={styles.scrollContent}>
         {loading ? (
           <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 50 }} />
         ) : results.length > 0 ? (
@@ -183,7 +214,7 @@ export default function SearchScreen() {
         ) : query && !loading ? (
           <Text style={styles.emptyText}>No results found for "{query}".</Text>
         ) : null}
-      </ScrollView>
+      </CustomScrollView>
 
       {/* Custom Add Status Modal */}
       <Modal visible={!!addingItem} transparent animationType="fade" onRequestClose={() => setAddingItem(null)}>
@@ -214,7 +245,7 @@ export default function SearchScreen() {
       {/* Details Modal */}
       <Modal visible={!!selectedItem} animationType="slide" presentationStyle="formSheet" onRequestClose={() => setSelectedItem(null)}>
         <View style={styles.detailsModalContainer}>
-          <ScrollView contentContainerStyle={styles.detailsModalContent}>
+          <CustomScrollView contentContainerStyle={styles.detailsModalContent}>
             {selectedItem && (
               <>
                 {selectedItem.backdrop_path && (
@@ -229,7 +260,7 @@ export default function SearchScreen() {
                 </View>
               </>
             )}
-          </ScrollView>
+          </CustomScrollView>
           <View style={styles.modalActions}>
              <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedItem(null)}>
                 <Text style={styles.closeBtnText}>Close</Text>

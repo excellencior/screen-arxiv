@@ -1,9 +1,10 @@
 declare var window: any;
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Platform, ImageBackground, Linking, Dimensions, Animated } from 'react-native';
-import { useSwipeGesture } from '../hooks/useSwipeGesture';
+import {  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Platform, ImageBackground, Linking, Dimensions, Animated  } from 'react-native';
+import CustomScrollView, { ScrollSection } from '../components/CustomScrollView';
 import { Plus, X, Trash2, CheckSquare, Play, RefreshCw, Search, ChevronRight } from 'lucide-react-native';
 import MediaSlimCard from '../components/MediaSlimCard';
+import MarqueeTitle from '../components/MarqueeTitle';
 import { FadeInUp, smoothLayoutAnimation, springLayoutAnimation } from '../utils/animations';
 import { useLibrary } from '../context/LibraryContext';
 import { fetchMovieDetails } from '../services/tmdb';
@@ -39,45 +40,7 @@ const FONT_REGULAR = { fontFamily: 'Open Sans', fontWeight: '500' as const, lett
 const FONT_BOLD = { fontFamily: 'Open Sans', fontWeight: '800' as const, letterSpacing: 1.0 };
 const { width } = Dimensions.get('window');
 
-const MarqueeTitle = ({ title, style }: { title: string; style: any }) => {
-  const translateX = React.useRef(new Animated.Value(0)).current;
-  const [containerW, setContainerW] = React.useState(0);
-  const [textW, setTextW] = React.useState(0);
-
-  React.useEffect(() => {
-    translateX.setValue(0);
-    if (textW > containerW && containerW > 0) {
-      const distance = textW - containerW;
-      const anim = Animated.loop(
-        Animated.sequence([
-          Animated.delay(1000),
-          Animated.timing(translateX, { toValue: -distance, duration: distance * 15, useNativeDriver: false }),
-          Animated.delay(500),
-          Animated.timing(translateX, { toValue: 0, duration: 0, useNativeDriver: false }),
-        ])
-      );
-      anim.start();
-      return () => anim.stop();
-    }
-  }, [textW, containerW, title]);
-
-  return (
-    <View style={{ overflow: 'hidden', marginBottom: 8 }} onLayout={(e) => setContainerW(e.nativeEvent.layout.width)}>
-      <Animated.View style={{ transform: [{ translateX }], alignSelf: 'flex-start' }}>
-        <Text 
-          style={style}
-          numberOfLines={1}
-          onTextLayout={(e: any) => {
-            const lineW = e.nativeEvent?.lines?.[0]?.width;
-            if (lineW && lineW > 0) setTextW(lineW);
-          }}
-        >
-          {title}
-        </Text>
-      </Animated.View>
-    </View>
-  );
-};
+// MarqueeTitle imported from ../components/MarqueeTitle
 
 export default function MoviesScreen({ navigation }: any) {
   const { theme, isDarkMode } = useAppTheme(); // Consuming useAppTheme
@@ -97,10 +60,10 @@ export default function MoviesScreen({ navigation }: any) {
   const [confirmDelete, setConfirmDelete] = useState<{type: 'single'|'bulk'} | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
-  const movieSwipeHandlers = useSwipeGesture({
-    onSwipeDown: () => { smoothLayoutAnimation(); setSelectedMovie(null); },
-    threshold: 60,
-  });
+  // Year section offsets for the scrollbar section indicator
+  const yearOffsets = useRef<Record<number, number>>({});
+  const [scrollSections, setScrollSections] = useState<ScrollSection[]>([]);
+
 
   const displayedMovies = useMemo(() => {
     let list = [...movies];
@@ -116,6 +79,8 @@ export default function MoviesScreen({ navigation }: any) {
       map[m.year].push(m);
     });
     const years = Object.keys(map).map(Number).sort((a, b) => b - a);
+    // Reset offsets when the year grouping changes
+    yearOffsets.current = {};
     return { map, years };
   }, [displayedMovies]);
 
@@ -212,7 +177,7 @@ export default function MoviesScreen({ navigation }: any) {
       </View>
 
       <View style={{ marginBottom: 16 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 4, gap: 8 }}>
+        <CustomScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 4, gap: 8 }}>
           <TouchableOpacity onPress={() => { smoothLayoutAnimation(); setStatusFilter(null); }} style={[styles.filterPill, !statusFilter && styles.filterPillActive]}>
             <Text style={[styles.filterPillText, !statusFilter && styles.filterPillTextActive]}>All</Text>
           </TouchableOpacity>
@@ -224,10 +189,10 @@ export default function MoviesScreen({ navigation }: any) {
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+        </CustomScrollView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <CustomScrollView contentContainerStyle={styles.scrollContent} sections={scrollSections}>
         {movies.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>Your movie archive is empty.</Text>
@@ -237,7 +202,19 @@ export default function MoviesScreen({ navigation }: any) {
           </View>
         ) : (
           groupedByYear.years.map(year => (
-            <View key={year} style={styles.yearSection}>
+            <View
+              key={year}
+              style={styles.yearSection}
+              onLayout={(e) => {
+                const y = e.nativeEvent.layout.y;
+                yearOffsets.current[year] = y;
+                // Rebuild the sorted sections list whenever a section reports its offset
+                const sorted = Object.entries(yearOffsets.current)
+                  .map(([yr, scrollY]) => ({ label: String(yr), scrollY }))
+                  .sort((a, b) => a.scrollY - b.scrollY);
+                setScrollSections(sorted);
+              }}
+            >
               <View style={styles.yearHeader}>
                 <Text style={styles.yearTitle}>{year}</Text>
                 <View style={styles.yearLine} />
@@ -258,12 +235,12 @@ export default function MoviesScreen({ navigation }: any) {
             </View>
           ))
         )}
-      </ScrollView>
+      </CustomScrollView>
 
       {/* Cinematic Detail Modal */}
       <Modal visible={!!selectedMovie} animationType="slide" presentationStyle="overFullScreen" transparent onRequestClose={() => setSelectedMovie(null)}>
         {selectedMovie && (
-           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }} {...movieSwipeHandlers}>
+           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }}>
             {/* The Backdrop Image - top half */}
             <View style={{ height: Dimensions.get('window').height * 0.50, width: '100%', position: 'absolute', top: 0, backgroundColor: '#000000' }}>
                {selectedMovie.backdrop_path ? (
@@ -280,7 +257,7 @@ export default function MoviesScreen({ navigation }: any) {
                ))}
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
+            <CustomScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
               {/* TOP LEFT STATUS RIBBON - scrolls with content */}
               {(() => {
                  if (!selectedMovie.status) return null;
@@ -306,7 +283,7 @@ export default function MoviesScreen({ navigation }: any) {
               </View>
               
               {/* Title + Meta — positioned at bottom of dark backdrop area */}
-              <View style={{ paddingTop: Dimensions.get('window').height * 0.35, paddingHorizontal: 24, paddingBottom: 16 }}>
+              <View style={{ paddingTop: Dimensions.get('window').height * 0.35, paddingHorizontal: 24, paddingBottom: 24 }}>
                  <MarqueeTitle title={selectedMovie.title} style={styles.modalTitle} key={selectedMovie.id} />
                  <Text style={styles.modalMeta}>
                     {selectedMovie.year}   •   {selectedMovie.runtime ? `${Math.floor(selectedMovie.runtime / 60)}h ${selectedMovie.runtime % 60}m` : '? min'}
@@ -314,7 +291,7 @@ export default function MoviesScreen({ navigation }: any) {
               </View>
 
               {/* Status buttons — transparent, sits between dark backdrop and white content */}
-              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 24, paddingVertical: 16 }}>
+              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 24, paddingVertical: 20 }}>
                 <AnimatedPill 
                   title="WATCHED" 
                   isActive={selectedMovie.status === 'WATCHED'} 
@@ -358,7 +335,7 @@ export default function MoviesScreen({ navigation }: any) {
                  {selectedMovie.cast && selectedMovie.cast.length > 0 && (
                    <View style={[styles.castSection, { marginHorizontal: -24 }]}>
                      <Text style={[styles.sectionHeading, { paddingHorizontal: 24 }]}>TOP CAST</Text>
-                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingHorizontal: 24 }}>
+                     <CustomScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingHorizontal: 24 }}>
                        {selectedMovie.cast.map((c: any, i: number) => (
                          <View key={i} style={styles.castBubble}>
                            <View style={[styles.castCircLight, { overflow: 'hidden' }]}>
@@ -372,7 +349,7 @@ export default function MoviesScreen({ navigation }: any) {
                            <Text style={styles.castRole} numberOfLines={1}>{c.role}</Text>
                          </View>
                        ))}
-                     </ScrollView>
+                     </CustomScrollView>
                    </View>
                   )}
                   
@@ -388,7 +365,7 @@ export default function MoviesScreen({ navigation }: any) {
 
                   <View style={{ height: 40 }} />
               </View>
-            </ScrollView>
+            </CustomScrollView>
           </View>
         )}
       </Modal>

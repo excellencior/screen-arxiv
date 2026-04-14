@@ -1,7 +1,7 @@
 declare var window: any;
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Platform, ImageBackground, Linking, ActivityIndicator, Dimensions, Animated, PanResponder } from 'react-native';
-import { useSwipeGesture } from '../hooks/useSwipeGesture';
+import {  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Platform, ImageBackground, Linking, ActivityIndicator, Dimensions, Animated  } from 'react-native';
+import CustomScrollView, { ScrollSection } from '../components/CustomScrollView';
 import { Tv, Play, Check, X, RefreshCw, ChevronLeft, Trash2, ShieldAlert, CheckSquare, Plus, Clock } from 'lucide-react-native';
 import { useLibrary } from '../context/LibraryContext';
 import { FadeInUp, smoothLayoutAnimation, springLayoutAnimation } from '../utils/animations';
@@ -10,9 +10,12 @@ import { useAppTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal';
 import MediaSlimCard from '../components/MediaSlimCard';
+import MarqueeTitle from '../components/MarqueeTitle';
 
 const FONT_REGULAR = { fontFamily: 'Open Sans', fontWeight: '500' as const, letterSpacing: 0.5 };
 const FONT_BOLD = { fontFamily: 'Open Sans', fontWeight: '800' as const, letterSpacing: 1.0 };
+
+// MarqueeTitle imported from ../components/MarqueeTitle
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = Math.floor((width - 32 - 16) / 2);
 
@@ -80,24 +83,14 @@ export default function TVScreen({ navigation }: any) {
     });
   }, [episodeSlideAnim]);
 
-  // Swipe gestures
-  const showSwipeHandlers = useSwipeGesture({
-    onSwipeDown: () => {
-      if (selectedSeason !== null) { smoothLayoutAnimation(); setSelectedSeason(null); }
-      else if (selectedShow) { smoothLayoutAnimation(); setSelectedShow(null); }
-    },
-    threshold: 60,
-  });
 
-  const episodeSwipeHandlers = useSwipeGesture({
-    onSwipeLeft: () => closeEpisode('left'),
-    onSwipeRight: () => closeEpisode('right'),
-    threshold: 50,
-    captureHorizontal: true,
-  });
   const [loadingSeason, setLoadingSeason] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{type: 'single' | 'bulk'} | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  // Year section offsets for the scrollbar section indicator
+  const yearOffsets = useRef<Record<number, number>>({});
+  const [scrollSections, setScrollSections] = useState<ScrollSection[]>([]);
 
   const displayedShows = useMemo(() => {
     let list = [...shows];
@@ -113,6 +106,8 @@ export default function TVScreen({ navigation }: any) {
       map[s.year].push(s);
     });
     const years = Object.keys(map).map(Number).sort((a, b) => b - a);
+    // Reset offsets when the year grouping changes
+    yearOffsets.current = {};
     return { map, years };
   }, [displayedShows]);
 
@@ -155,12 +150,16 @@ export default function TVScreen({ navigation }: any) {
         const trailer = details.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null;
         const episodeRuntime = details.episode_run_time?.[0] || details.last_episode_to_air?.runtime || 0;
         const totalEpisodes = details.number_of_episodes || 0;
-        const seasons = details.seasons?.filter((s: any) => s.season_number > 0) || [];
+        const tmdbSeasons = details.seasons?.filter((s: any) => s.season_number > 0) || [];
+        const defaultSeasons = tmdbSeasons.map((s: any) => ({
+          ...s,
+          status: show.status === 'WATCHED' ? 'WATCHED' : 'WILL WATCH'
+        }));
         const cast = details.credits?.cast?.slice(0, 5).map((c: any) => ({ name: c.name, role: c.character, profile_path: c.profile_path })) || [];
         
         const updated = { 
           ...show, 
-          seasons: (Array.isArray(show.seasons) && show.seasons.length > 0) ? show.seasons : seasons, 
+          seasons: (Array.isArray(show.seasons) && show.seasons.length > 0) ? show.seasons : defaultSeasons, 
           runtime: episodeRuntime * totalEpisodes, 
           episode_runtime: episodeRuntime, 
           trailer, 
@@ -366,30 +365,47 @@ export default function TVScreen({ navigation }: any) {
 
   const activeSeason = selectedSeason !== null ? selectedShow?.seasons?.find((s: any) => s.season_number === selectedSeason) : null;
 
-  // Back button handler for web (browser back)
-  const handleShowModalBack = useCallback(() => {
-    if (episodeVisible) {
-      closeEpisode('right');
-    } else if (selectedSeason !== null) {
-      smoothLayoutAnimation();
-      setSelectedSeason(null);
-    } else if (selectedShow) {
-      smoothLayoutAnimation();
-      setSelectedShow(null);
-    }
-  }, [episodeVisible, selectedSeason, selectedShow, closeEpisode]);
+  // Push a history entry and attach a one-shot popstate listener for this navigation level.
+  // Each level (show, season, episode) pushes exactly ONE entry when first opened.
 
+  // Level 1 — Show detail opened
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-    if (selectedShow) {
-      (window as any).history.pushState({ modal: 'show' }, '');
-      const handler = (e: any) => {
-        handleShowModalBack();
-      };
-      (window as any).addEventListener('popstate', handler);
-      return () => (window as any).removeEventListener('popstate', handler);
-    }
-  }, [selectedShow, selectedSeason, selectedEpisode, handleShowModalBack]);
+    if (!selectedShow) return;
+    (window as any).history.pushState({ modal: 'show' }, '');
+    const handler = () => {
+      smoothLayoutAnimation();
+      setSelectedShow(null);
+      setSelectedSeason(null);
+    };
+    (window as any).addEventListener('popstate', handler, { once: true });
+    return () => (window as any).removeEventListener('popstate', handler);
+  }, [selectedShow]);
+
+  // Level 2 — Season detail opened (inside the show modal)
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    if (selectedSeason === null) return;
+    (window as any).history.pushState({ modal: 'season' }, '');
+    const handler = () => {
+      smoothLayoutAnimation();
+      setSelectedSeason(null);
+    };
+    (window as any).addEventListener('popstate', handler, { once: true });
+    return () => (window as any).removeEventListener('popstate', handler);
+  }, [selectedSeason]);
+
+  // Level 3 — Episode detail opened (slide overlay inside the season view)
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    if (!episodeVisible) return;
+    (window as any).history.pushState({ modal: 'episode' }, '');
+    const handler = () => {
+      closeEpisode('right');
+    };
+    (window as any).addEventListener('popstate', handler, { once: true });
+    return () => (window as any).removeEventListener('popstate', handler);
+  }, [episodeVisible, closeEpisode]);
 
   return (
     <View style={styles.container}>
@@ -426,7 +442,7 @@ export default function TVScreen({ navigation }: any) {
       </View>
 
       <View style={{ marginBottom: 16 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 4, gap: 8 }}>
+        <CustomScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 4, gap: 8 }}>
           <TouchableOpacity onPress={() => { smoothLayoutAnimation(); setStatusFilter(null); }} style={[styles.filterPill, !statusFilter && styles.filterPillActive]}>
             <Text style={[styles.filterPillText, !statusFilter && styles.filterPillTextActive]}>All</Text>
           </TouchableOpacity>
@@ -438,10 +454,10 @@ export default function TVScreen({ navigation }: any) {
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+        </CustomScrollView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <CustomScrollView contentContainerStyle={styles.scrollContent} sections={scrollSections}>
         {shows.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>Your series archive is empty.</Text>
@@ -451,7 +467,18 @@ export default function TVScreen({ navigation }: any) {
           </View>
         ) : (
           groupedByYear.years.map(year => (
-            <View key={year} style={styles.yearSection}>
+            <View
+              key={year}
+              style={styles.yearSection}
+              onLayout={(e) => {
+                const y = e.nativeEvent.layout.y;
+                yearOffsets.current[year] = y;
+                const sorted = Object.entries(yearOffsets.current)
+                  .map(([yr, scrollY]) => ({ label: String(yr), scrollY }))
+                  .sort((a, b) => a.scrollY - b.scrollY);
+                setScrollSections(sorted);
+              }}
+            >
               <View style={styles.yearHeader}>
                 <Text style={styles.yearTitle}>{year}</Text>
                 <View style={styles.yearLine} />
@@ -472,12 +499,12 @@ export default function TVScreen({ navigation }: any) {
             </View>
           ))
         )}
-      </ScrollView>
+      </CustomScrollView>
 
       {/* Cinematic Detail Modal for Series/Seasons */}
       <Modal visible={!!selectedShow} animationType="slide" presentationStyle="overFullScreen" transparent onRequestClose={() => { if (selectedSeason !== null) { smoothLayoutAnimation(); setSelectedSeason(null); } else { smoothLayoutAnimation(); setSelectedShow(null); } }}>
         {selectedShow && (
-           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }} {...showSwipeHandlers}>
+           <View style={{ flex: 1, backgroundColor: theme.colors.background, overflow: 'hidden' }}>
             <View style={{ height: Dimensions.get('window').height * 0.6, width: '100%', position: 'absolute', top: 0, backgroundColor: '#000000' }}>
                {selectedShow.backdrop_path ? (
                   <Image source={{ uri: `https://image.tmdb.org/t/p/w1280${selectedShow.backdrop_path}` }} style={{ width: '100%', height: '100%', opacity: 0.6 }} />
@@ -493,7 +520,7 @@ export default function TVScreen({ navigation }: any) {
                ))}
             </View>
 
-            <ScrollView key={selectedSeason === null ? "show" : `season-${selectedSeason}`} contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
+            <CustomScrollView key={selectedSeason === null ? "show" : `season-${selectedSeason}`} contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
               {/* TOP LEFT STATUS RIBBON - scrolls with content */}
               {(() => {
                 let ribbonStatus: string | null = null;
@@ -559,7 +586,7 @@ export default function TVScreen({ navigation }: any) {
               {selectedSeason === null ? (
                 <>
                   <View style={{ paddingTop: Dimensions.get('window').height * 0.38, paddingHorizontal: 24 }}>
-                    <Text style={styles.modalTitle} numberOfLines={3}>{selectedShow.title || selectedShow.name}</Text>
+                    <MarqueeTitle title={selectedShow.title || selectedShow.name} style={styles.modalTitle} key={selectedShow.id} />
                     <Text style={styles.modalMeta}>
                           {selectedShow.year}  •  {selectedShow.number_of_seasons || selectedShow.seasons?.length || '?'} Seasons
                     </Text>
@@ -599,9 +626,9 @@ export default function TVScreen({ navigation }: any) {
                       const watchedStatus = selectedShow.progress?.watched || 0;
                       const isFullyWatchedShow = totalStatus > 0 && watchedStatus >= totalStatus;
                       return (
-                        <TouchableOpacity disabled={isFullyWatchedShow} style={[styles.pillBtnPrimary, { flex: 1, justifyContent: 'center', backgroundColor: isFullyWatchedShow ? theme.colors.surfaceHighlight : theme.colors.ribbonWatched, marginLeft: selectedShow.trailer ? 12 : 0, opacity: isFullyWatchedShow ? 0.8 : 1 }]} onPress={handleMarkAllSeasonsWatched} activeOpacity={0.8}>
+                        <TouchableOpacity style={[styles.pillBtnPrimary, { flex: 1, justifyContent: 'center', backgroundColor: isFullyWatchedShow ? theme.colors.surfaceHighlight : theme.colors.ribbonWatched, marginLeft: selectedShow.trailer ? 12 : 0, opacity: isFullyWatchedShow ? 0.8 : 1 }]} onPress={handleMarkAllSeasonsWatched} activeOpacity={0.8}>
                            <Check size={20} color={isFullyWatchedShow ? theme.colors.ribbonWatched : '#FFFFFF'} />
-                           <Text style={[styles.pillBtnPrimaryText, { marginLeft: 8, color: isFullyWatchedShow ? theme.colors.textSecondary : '#FFFFFF' }]}>{isFullyWatchedShow ? 'WATCHED' : 'Mark All Seen'}</Text>
+                           <Text style={[styles.pillBtnPrimaryText, { marginLeft: 8, color: isFullyWatchedShow ? theme.colors.textSecondary : '#FFFFFF' }]}>{isFullyWatchedShow ? 'Unmark All' : 'Mark All Seen'}</Text>
                         </TouchableOpacity>
                       );
                     })()}
@@ -617,7 +644,7 @@ export default function TVScreen({ navigation }: any) {
                     {selectedShow.cast && selectedShow.cast.length > 0 && (
                       <View style={{ marginBottom: 20, marginHorizontal: -24 }}>
                         <Text style={[styles.sectionHeading, { marginBottom: 16, paddingHorizontal: 24 }]}>TOP CAST</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingHorizontal: 24 }}>
+                        <CustomScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingHorizontal: 24 }}>
                           {selectedShow.cast.map((c: any, i: number) => (
                             <FadeInUp key={i} delay={i * 50} style={{ alignItems: 'center', width: 70 }}>
                               <View style={[{ width: 60, height: 60, borderRadius: 30, backgroundColor: theme.colors.surfaceHighlight, justifyContent: 'center', alignItems: 'center', marginBottom: 8, borderWidth: 1, borderColor: theme.colors.border }, { overflow: 'hidden' }]}>
@@ -631,21 +658,21 @@ export default function TVScreen({ navigation }: any) {
                               <Text style={{ color: theme.colors.textSecondary, ...FONT_REGULAR, fontSize: 10, textAlign: 'center' }} numberOfLines={1}>{c.role}</Text>
                             </FadeInUp>
                           ))}
-                        </ScrollView>
+                        </CustomScrollView>
                       </View>
                     )}
 
                     {Array.isArray(selectedShow.seasons) && selectedShow.seasons.length > 0 && (
                       <View style={[styles.seasonsList, { marginHorizontal: -24 }]}>
                         <Text style={[styles.sectionHeading, { marginBottom: 16, paddingHorizontal: 24 }]}>SEASONS</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingHorizontal: 24 }}>
+                        <CustomScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingHorizontal: 24 }}>
                           {selectedShow.seasons.map((season: any, index: number) => {
                             const eps = season.episodes || [];
                             const watchedCount = eps.filter((e: any) => e.status === 'WATCHED').length;
                             const isFullyWatched = (eps.length > 0 && watchedCount === eps.length) || (eps.length === 0 && season.status === 'WATCHED');
                             return (
                               <FadeInUp key={season.id} delay={index * 50}>
-                                <TouchableOpacity activeOpacity={0.8} style={{ width: 110 }} onPress={() => { smoothLayoutAnimation(); handleSeasonClick(season.season_number); }}>
+                                <TouchableOpacity activeOpacity={0.8} style={{ width: 110 }} onPress={() => handleSeasonClick(season.season_number)}>
                                    <View style={{ width: 110, height: 160, borderRadius: 8, overflow: 'hidden', marginBottom: 8, backgroundColor: theme.colors.surfaceHighlight }}>
                                      {season.poster_path ? (
                                         <Image source={{ uri: `https://image.tmdb.org/t/p/w200${season.poster_path}` }} style={{ width: '100%', height: '100%' }} />
@@ -664,7 +691,7 @@ export default function TVScreen({ navigation }: any) {
                               </FadeInUp>
                             );
                           })}
-                        </ScrollView>
+                        </CustomScrollView>
                       </View>
                     )}
                     <View style={{ height: 40 }} />
@@ -675,7 +702,7 @@ export default function TVScreen({ navigation }: any) {
                   loadingSeason ? (
                      <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 100 }} />
                   ) : (
-                    <View style={[styles.modalContentCore, { paddingTop: Platform.OS === 'ios' ? 120 : 100 }]}>
+                    <View key={`season-${selectedSeason}`} style={[styles.modalContentCore, { paddingTop: Platform.OS === 'ios' ? 120 : 100 }]}>
                       <View style={{ alignItems: 'flex-start', marginBottom: 32 }}>
                         <Text style={{ fontSize: 38, color: theme.colors.text, ...FONT_BOLD, marginBottom: 16, lineHeight: 42 }}>{activeSeason?.name}</Text>
                         {(() => {
@@ -691,8 +718,8 @@ export default function TVScreen({ navigation }: any) {
                       </View>
                       
                       {activeSeason?.episodes?.map((ep: any, index: number) => (
+                        <FadeInUp key={ep.id} delay={index * 40}>
                         <TouchableOpacity 
-                          key={ep.id} 
                           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.border }}
                           onPress={() => openEpisode(ep)}
                           activeOpacity={0.7}
@@ -717,15 +744,16 @@ export default function TVScreen({ navigation }: any) {
                              </View>
                           )}
                         </TouchableOpacity>
+                        </FadeInUp>
                       ))}
                     </View>
                   )
                 )}
-              </ScrollView>
+              </CustomScrollView>
 
           {/* Episode Detail — Horizontal Slide Overlay (inside Modal so it renders on top) */}
           {episodeVisible && selectedEpisode && (
-            <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, transform: [{ translateX: episodeSlideAnim }] }} {...episodeSwipeHandlers}>
+            <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, transform: [{ translateX: episodeSlideAnim }] }}>
               <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
                 <View style={{ height: Dimensions.get('window').height * 0.6, width: '100%', position: 'absolute', top: 0 }}>
                    {selectedEpisode.still_path ? (
@@ -744,7 +772,7 @@ export default function TVScreen({ navigation }: any) {
                    ))}
                 </View>
 
-                <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
+                <CustomScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false} bounces={false}>
                   {(() => {
                      if (!selectedEpisode.status) return null;
                      let ribbonColor = theme.colors.ribbonWatched;
@@ -813,7 +841,7 @@ export default function TVScreen({ navigation }: any) {
                        </View>
                      )}
                   </View>
-                </ScrollView>
+                </CustomScrollView>
               </View>
             </Animated.View>
           )}
@@ -883,7 +911,7 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   modalTitle: { fontSize: 38, color: '#FFFFFF', ...FONT_BOLD, marginBottom: 8, lineHeight: 42, textShadow: '0px 2px 15px rgba(0,0,0,0.8)' } as any,
   modalMeta: { fontSize: 13, color: 'rgba(255,255,255,0.9)', ...FONT_BOLD, textTransform: 'uppercase', letterSpacing: 1, textShadow: '0px 1px 10px rgba(0,0,0,0.8)' } as any,
   
-  modalActionButtons: { flexDirection: 'row', gap: 8, marginTop: 36, paddingHorizontal: 24, paddingBottom: 12 },
+  modalActionButtons: { flexDirection: 'row', gap: 8, marginTop: 24, paddingHorizontal: 24, paddingVertical: 20, paddingBottom: 12 },
   pillBtnPrimary: { flex: 1, backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
   pillBtnPrimaryText: { color: theme.colors.primaryText, ...FONT_BOLD, fontSize: 13, marginLeft: 8 },
   pillBtnDanger: { backgroundColor: theme.colors.danger + '22', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.danger },

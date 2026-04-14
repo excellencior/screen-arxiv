@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, LogBox, Platform, Text } from 'react-native';
+import { LogBox, Platform, View, Text } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RootNavigator from './src/navigation/RootNavigator';
 import Toast, { BaseToastProps } from 'react-native-toast-message';
 import { LibraryProvider } from './src/context/LibraryContext';
@@ -33,10 +34,10 @@ const AppContent = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <RootNavigator />
       <Toast config={toastConfig} />
-    </View>
+    </GestureHandlerRootView>
   );
 };
 
@@ -49,3 +50,4 @@ export default function App() {
     </ThemeProvider>
   );
 }
+

@@ -10,11 +10,10 @@ import {
   computeGenreDistribution,
   computeTopLists,
   computeViewingBehavior,
-  computeCompletionMetrics,
-  computeRemainingWatchTime,
 } from '../services/analytics';
 import { StatusToggle } from '../types';
 import { useAppTheme } from '../context/ThemeContext';
+import { getDailyQuote } from '../data/quotes';
 
 const FONT_REGULAR = { fontFamily: 'Open Sans', fontWeight: '500' as const, letterSpacing: 0.5 };
 const FONT_BOLD = { fontFamily: 'Open Sans', fontWeight: '800' as const, letterSpacing: 1.0 };
@@ -40,52 +39,45 @@ function formatRuntime(minutes: number) {
 export default function AnalyticsScreen() {
   const { theme, isDarkMode } = useAppTheme();
   const styles = useMemo(() => createStyles(theme, isDarkMode), [theme, isDarkMode]);
-  const { movies, shows, statusToggle, setStatusToggle } = useLibrary();
+  const { movies, shows } = useLibrary();
+  const [analyticsFilter, setAnalyticsFilter] = useState<string>('WATCHED');
   const [genreMap, setGenreMap] = useState<Map<number, string>>(new Map());
 
   useEffect(() => {
     fetchGenreMap().then(setGenreMap);
   }, []);
 
-  const toggleStatus = (key: keyof StatusToggle) => setStatusToggle({ ...statusToggle, [key]: !statusToggle[key] });
-
   const filteredMovies = useMemo(() => {
+    if (analyticsFilter === 'ALL') return movies;
     return movies.filter(x => {
       const s = x.status;
-      if ((s === 'WATCHED' || s === 'DONE') && statusToggle.WATCHED) return true;
-      if (s === 'WATCHING' && statusToggle.WATCHING) return true;
-      if (s === 'WILL WATCH' && statusToggle['WILL WATCH']) return true;
-      if (s === 'ON HOLD' && statusToggle['ON HOLD']) return true;
+      if (analyticsFilter === 'WATCHED' && (s === 'WATCHED' || s === 'DONE')) return true;
+      if (analyticsFilter === 'WATCHING' && s === 'WATCHING') return true;
+      if (analyticsFilter === 'WILL WATCH' && (s === 'WILL WATCH' || s === 'PLAN TO WATCH')) return true;
       return false;
     });
-  }, [movies, statusToggle]);
+  }, [movies, analyticsFilter]);
 
   const filteredShows = useMemo(() => {
+    if (analyticsFilter === 'ALL') return shows;
     return shows.filter(x => {
       const st = x.status;
-      if ((st === 'WATCHED' || st === 'DONE') && statusToggle.WATCHED) return true;
-      if (st === 'WATCHING' && statusToggle.WATCHING) return true;
-      if (st === 'WILL WATCH' && statusToggle['WILL WATCH']) return true;
-      if (st === 'ON HOLD' && statusToggle['ON HOLD']) return true;
+      if (analyticsFilter === 'WATCHED' && (st === 'WATCHED' || st === 'DONE')) return true;
+      if (analyticsFilter === 'WATCHING' && st === 'WATCHING') return true;
+      if (analyticsFilter === 'WILL WATCH' && (st === 'WILL WATCH' || st === 'PLAN TO WATCH')) return true;
       return false;
     });
-  }, [shows, statusToggle]);
+  }, [shows, analyticsFilter]);
 
   const overview = useMemo(() => computeOverviewStats(filteredMovies, filteredShows), [filteredMovies, filteredShows]);
   const episodeProgress = useMemo(() => computeEpisodeProgress(filteredShows), [filteredShows]);
   const decades = useMemo(() => computeReleaseYearDistribution(filteredMovies, filteredShows), [filteredShows, filteredMovies]);
   const genres = useMemo(() => computeGenreDistribution(filteredMovies, filteredShows, genreMap), [filteredMovies, filteredShows, genreMap]);
-  const completion = useMemo(() => computeCompletionMetrics(filteredShows), [filteredShows]);
   const behavior = useMemo(() => computeViewingBehavior(filteredMovies, filteredShows), [filteredMovies, filteredShows]);
-  const remaining = useMemo(() => computeRemainingWatchTime(filteredMovies, filteredShows), [filteredMovies, filteredShows]);
 
   // Per-category runtime
   const movieRuntime = useMemo(() => filteredMovies.reduce((acc: number, m: any) => acc + (m.runtime || 0), 0), [filteredMovies]);
   const seriesRuntime = useMemo(() => filteredShows.reduce((acc: number, s: any) => acc + (s.runtime || 0), 0), [filteredShows]);
-
-  // Remaining time formatted
-  const remainingHours = Math.floor(remaining.totalMinutes / 60);
-  const remainingMins = remaining.totalMinutes % 60;
 
   const totalItems = overview.totalMovies + overview.totalShows;
   const watchDays = Math.floor(overview.totalWatchTimeMinutes / (24 * 60));
@@ -142,9 +134,9 @@ export default function AnalyticsScreen() {
       {/* Status Filters */}
       <View style={{ paddingVertical: 12, marginBottom: 24, borderBottomWidth: 1, borderTopWidth: 1, borderColor: theme.colors.border }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 20 }}>
-          <FilterPill label="Watched" active={statusToggle.WATCHED} onPress={() => toggleStatus('WATCHED')} theme={theme} />
-          <FilterPill label="Watching" active={statusToggle.WATCHING} onPress={() => toggleStatus('WATCHING')} theme={theme} />
-          <FilterPill label="Waitlist" active={statusToggle['WILL WATCH']} onPress={() => toggleStatus('WILL WATCH')} theme={theme} />
+          <FilterPill label="Watched" active={analyticsFilter === 'WATCHED'} onPress={() => setAnalyticsFilter('WATCHED')} theme={theme} />
+          <FilterPill label="Watching" active={analyticsFilter === 'WATCHING'} onPress={() => setAnalyticsFilter('WATCHING')} theme={theme} />
+          <FilterPill label="Waitlist" active={analyticsFilter === 'WILL WATCH'} onPress={() => setAnalyticsFilter('WILL WATCH')} theme={theme} />
         </ScrollView>
       </View>
 
@@ -172,23 +164,6 @@ export default function AnalyticsScreen() {
             <View style={styles.quickStatCard}>
               <Text style={styles.quickStatNumber}>{overview.totalEpisodesWatched}</Text>
               <Text style={styles.quickStatLabel}>EPISODES</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Completion & Pace — Two-column insight cards */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>INSIGHTS</Text>
-          <View style={styles.insightRow}>
-            <View style={styles.insightCard}>
-              <Text style={[styles.insightValue, { color: theme.colors.ribbonWatched }]}>{completion.avgCompletionRate}%</Text>
-              <Text style={styles.insightLabel}>COMPLETION</Text>
-              <Text style={styles.insightSub}>{completion.completedSeries} of {completion.completedSeries + completion.inProgressSeries + completion.willWatchSeries} series done</Text>
-            </View>
-            <View style={styles.insightCard}>
-              <Text style={[styles.insightValue, { color: theme.colors.ribbonWaitlist }]}>{remainingHours > 0 ? `${remainingHours}h` : `${remainingMins}m`}</Text>
-              <Text style={styles.insightLabel}>TO COMPLETE</Text>
-              <Text style={styles.insightSub}>{remaining.totalMinutes > 0 ? `${formatRuntime(remaining.movieMinutes)} movies · ${formatRuntime(remaining.seriesMinutes)} series` : 'nothing pending'}</Text>
             </View>
           </View>
         </View>
@@ -311,6 +286,21 @@ export default function AnalyticsScreen() {
 
       </View>
       )}
+      
+      {/* Inspirational Quote */}
+      <View style={{ paddingHorizontal: 40, paddingVertical: 60, alignItems: 'center', opacity: 0.7 }}>
+        <Text style={{ 
+          color: theme.colors.textSecondary, 
+          fontFamily: 'Open Sans', 
+          fontStyle: 'italic', 
+          fontSize: 13, 
+          textAlign: 'center', 
+          lineHeight: 22 
+        }}>
+          "{getDailyQuote()}"
+        </Text>
+      </View>
+
     </ScrollView>
   );
 }
@@ -337,13 +327,6 @@ const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   quickStatNumber: { color: theme.colors.text, ...FONT_BOLD, fontSize: 28, marginBottom: 4 },
   quickStatLabel: { color: theme.colors.textSecondary, ...FONT_BOLD, fontSize: 9, letterSpacing: 1.5 },
   quickStatSub: { color: theme.colors.primary, ...FONT_BOLD, fontSize: 10, marginTop: 4, opacity: 0.8 },
-
-  // Insight Cards
-  insightRow: { flexDirection: 'row', gap: 10 },
-  insightCard: { flex: 1, backgroundColor: theme.colors.surface, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border },
-  insightValue: { ...FONT_BOLD, fontSize: 28, marginBottom: 4 },
-  insightLabel: { color: theme.colors.textSecondary, ...FONT_BOLD, fontSize: 9, letterSpacing: 1.5, marginBottom: 6 },
-  insightSub: { color: theme.colors.textTertiary, ...FONT_REGULAR, fontSize: 11 },
 
   // Status Pipeline
   pipelineCard: { backgroundColor: theme.colors.surface, padding: 20, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border },

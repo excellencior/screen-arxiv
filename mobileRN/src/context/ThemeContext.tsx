@@ -19,6 +19,7 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -29,6 +30,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       } catch (e) {
         console.error('Error loading theme:', e);
+      } finally {
+        setIsLoaded(true);
       }
     };
     loadTheme();
@@ -46,6 +49,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const theme = isDarkMode ? DarkTheme : LightTheme;
+
+  if (!isLoaded) return null;
 
   return (
     <ThemeContext.Provider value={{ theme, isDarkMode, toggleTheme }}>
